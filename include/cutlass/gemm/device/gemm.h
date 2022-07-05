@@ -256,6 +256,37 @@ class Gemm {
   static ComplexTransform const kTransformA = ComplexTransform::kNone;
   static ComplexTransform const kTransformB = ComplexTransform::kNone;
 
+
+ using DefaultOperator = typename DefaultGemmConfiguration<
+    OperatorClass_, ArchTag_, ElementA_, ElementB_, ElementC_,
+    ElementAccumulator_>::Operator;
+ using DefaultConfig = typename DefaultGemmConfiguration<
+    OperatorClass_, ArchTag_, ElementA_, ElementB_, ElementC_,
+    ElementAccumulator_>::Operator;
+ 
+ // LINK  added DefaultType from GEMM
+ using DefaultType = typename kernel::DefaultGemm<
+    ElementA,
+    LayoutA,
+    kAlignmentA,
+    ElementB,
+    LayoutB,
+    kAlignmentB,
+    ElementC,
+    LayoutC,
+    ElementAccumulator,
+    OperatorClass,
+    ArchTag,
+    ThreadblockShape,
+    WarpShape,
+    InstructionShape,
+    EpilogueOutputOp,
+    ThreadblockSwizzle,
+    kStages,
+    kSplitKSerial,
+    Operator
+  >;
+
   /// Define the kernel
   using GemmKernel = typename kernel::DefaultGemm<
     ElementA,
@@ -594,6 +625,7 @@ class Gemm<ElementA_, LayoutA_, ElementB_, LayoutB_, ElementC_,
   static ComplexTransform const kTransformA = ComplexTransform::kNone;
   static ComplexTransform const kTransformB = ComplexTransform::kNone;
   static bool const kSplitKSerial = SplitKSerial;
+
 
   using UnderlyingOperator = Gemm< 
     ElementB,

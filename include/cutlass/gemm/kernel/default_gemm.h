@@ -196,6 +196,13 @@ struct DefaultGemm<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB, kAlignment
       ThreadblockShape, WarpShape, InstructionShape, Stages,
       Operator, false, SharedMemoryClear, GatherA, GatherB>::ThreadblockMma;
 
+  //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+      ElementA, LayoutA, kAlignmentA, ElementB, LayoutB, kAlignmentB,
+      ElementAccumulator, LayoutC, arch::OpClassTensorOp, arch::Sm80,
+      ThreadblockShape, WarpShape, InstructionShape, Stages,
+      Operator, false, SharedMemoryClear, GatherA, GatherB>;
+
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
   /// Define the epilogue
@@ -304,6 +311,30 @@ struct DefaultGemm<
     GatherB
   >::ThreadblockMma;
 
+
+  //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+    ElementA,
+    LayoutA,
+    kAlignmentA,
+    ElementB,
+    LayoutB,
+    kAlignmentB,
+    ElementAccumulator,
+    layout::RowMajor,
+    arch::OpClassTensorOp,
+    arch::Sm75,
+    ThreadblockShape,
+    WarpShape,
+    InstructionShape,
+    2,
+    Operator,
+    false,
+    SharedMemoryClear,
+    GatherA,
+    GatherB
+  >;
+
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
   /// Define the epilogue
@@ -376,6 +407,14 @@ struct DefaultGemm<
       ThreadblockShape, WarpShape, InstructionShape, Stages, Operator,
       true, SharedMemoryClear>::ThreadblockMma;
 
+  //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+      ElementA, LayoutA, kAlignmentA, ElementB, LayoutB, kAlignmentB,
+      ElementAccumulator, LayoutC, arch::OpClassTensorOp, arch::Sm80,
+      ThreadblockShape, WarpShape, InstructionShape, Stages, Operator,
+      true, SharedMemoryClear>;
+
+
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
   /// Define the epilogue
@@ -442,6 +481,13 @@ struct DefaultGemm<ElementA, layout::ColumnMajorInterleaved<InterleavedK>,
       arch::OpClassTensorOp, arch::Sm75, ThreadblockShape, WarpShape,
       InstructionShape, 2, Operator, true>::ThreadblockMma;
 
+
+  //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+      ElementA, LayoutA, kAlignmentA, ElementB, LayoutB, kAlignmentB, ElementAccumulator, LayoutC,
+      arch::OpClassTensorOp, arch::Sm75, ThreadblockShape, WarpShape,
+      InstructionShape, 2, Operator, true>;
+  
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
   /// Define the epilogue
@@ -538,6 +584,28 @@ struct DefaultGemm<
     GatherA,
     GatherB
   >::ThreadblockMma;
+
+  //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+    ElementA,
+    LayoutA,
+    kAlignmentA,
+    ElementB,
+    LayoutB,
+    kAlignmentB,
+    ElementAccumulator,
+    layout::RowMajor,
+    arch::OpClassTensorOp,
+    arch::Sm70,
+    ThreadblockShape,
+    WarpShape,
+    GemmShape<8, 8, 4>,
+    2,
+    Operator,
+    false,
+    SharedMemoryClear,
+    GatherA,
+    GatherB>;
 
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
@@ -652,6 +720,29 @@ struct DefaultGemm<
       GatherA,
       GatherB>::ThreadblockMma;
 
+  
+    //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+    ElementA,
+    LayoutA,
+    kAlignmentA,
+    ElementB,
+    LayoutB,
+    kAlignmentB,
+    ElementAccumulator,
+    LayoutC,
+    arch::OpClassSimt,
+    arch::Sm50,
+    ThreadblockShape,
+    WarpShape,
+    GemmShape<1, 1, 1>,
+    2,
+    Operator,
+    false,
+    SharedMemoryClear,
+    GatherA,
+    GatherB>;
+
   static int const kEpilogueElementsPerAccess = EpilogueOutputOp::kCount;
   static_assert(kEpilogueElementsPerAccess == 1, "simt epilogue must operate on scalars");
 
@@ -759,6 +850,13 @@ struct DefaultGemm<ElementA,
       ElementAccumulator, LayoutC, arch::OpClassSimt, arch::Sm80,
       ThreadblockShape, WarpShape, GemmShape<1, 1, 1>, Stages,
       Operator, false, SharedMemoryClear, GatherA, GatherB>::ThreadblockMma;
+
+   //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+      ElementA, LayoutA, kAlignmentA, ElementB, LayoutB, kAlignmentB,
+      ElementAccumulator, LayoutC, arch::OpClassSimt, arch::Sm80,
+      ThreadblockShape, WarpShape, GemmShape<1, 1, 1>, Stages,
+      Operator, false, SharedMemoryClear, GatherA, GatherB>;
 
   static int const kEpilogueElementsPerAccess = EpilogueOutputOp::kCount;
   static_assert(kEpilogueElementsPerAccess == 1, "simt epilogue must operate on scalars");
