@@ -85,16 +85,16 @@ struct OutputTileThreadMapHelpers {
     int &tile_idx,
     int iter_idx) {
 
-    column_idx = iter_idx % Iterations::kColumn;
-    int residual   = iter_idx / Iterations::kColumn;
+    column_idx = iter_idx % Iterations::kColumn;        //%4
+    int residual   = iter_idx / Iterations::kColumn;    ///4
 
-    row_idx    = residual % Iterations::kRow;
+    row_idx    = residual % Iterations::kRow;           //%1
     residual       = residual / Iterations::kRow;
 
-    group_idx  = residual % Iterations::kGroup;
+    group_idx  = residual % Iterations::kGroup;   //%2
     residual       = residual / Iterations::kGroup;
 
-    cluster_idx = residual % Iterations::kCluster;
+    cluster_idx = residual % Iterations::kCluster;    //%1
     tile_idx    = residual / Iterations::kCluster;
   }
 
@@ -288,6 +288,7 @@ struct OutputTileOptimalThreadMap {
   using Shape = Shape_;
   using Count = Count_;
 
+  static auto const SIGN_LINE = __LINE__;
   static int const kWarpSize = 32;
   static int const kThreads = Threads;
   static int const kWarpCount = kThreads / kWarpSize;
@@ -394,33 +395,33 @@ struct OutputTileOptimalThreadMap {
   CUTLASS_HOST_DEVICE
   static MatrixCoord initial_offset(int thread_idx) {
 
-    int warp_idx = thread_idx / kWarpSize;
-    int lane_idx = thread_idx % kWarpSize;
+    int warp_idx = thread_idx / kWarpSize;    //0-8
+    int lane_idx = thread_idx % kWarpSize;    //0-32
 
     // Compute warp location
-    int cluster_idx = warp_idx / Detail::WarpPartitions::kCluster;
-    int residual_cluster = warp_idx % Detail::WarpPartitions::kCluster;
+    int cluster_idx = warp_idx / Detail::WarpPartitions::kCluster;    //0-4
+    int residual_cluster = warp_idx % Detail::WarpPartitions::kCluster; //0-2
 
-    int group_idx = residual_cluster / Detail::WarpPartitions::kGroup;
-    int residual_group = residual_cluster % Detail::WarpPartitions::kGroup;
+    int group_idx = residual_cluster / Detail::WarpPartitions::kGroup;  //0-2
+    int residual_group = residual_cluster % Detail::WarpPartitions::kGroup; //0
 
-    int row_idx = residual_group / Detail::WarpPartitions::kRow;
-    int col_idx = residual_group % Detail::WarpPartitions::kRow;
+    int row_idx = residual_group / Detail::WarpPartitions::kRow;    //0
+    int col_idx = residual_group % Detail::WarpPartitions::kRow;    //0
 
     // Compute per-lane offset
-    int lane_row_offset = lane_idx / Detail::kAccessWidth;
-    int lane_col_offset = lane_idx % Detail::kAccessWidth;
+    int lane_row_offset = lane_idx / Detail::kAccessWidth;        //0
+    int lane_col_offset = lane_idx % Detail::kAccessWidth;        //0-32
 
     // Compute coordinate in output space
-    int cluster_offset = cluster_idx * Shape::kRow * Count::kRow * Shape::kGroup * Count::kGroup;
-    int group_offset = group_idx * Shape::kRow * Count::kRow;
-    int row_offset = row_idx * Iterations::kRow * Detail::kAccessRows;
-    int column_offset = col_idx * Iterations::kColumn * Detail::kAccessWidth * kElementsPerAccess;
+    int cluster_offset = cluster_idx * Shape::kRow * Count::kRow * Shape::kGroup * Count::kGroup; //0-4 * 32
+    int group_offset = group_idx * Shape::kRow * Count::kRow;                                     //0-2 * 4
+    int row_offset = row_idx * Iterations::kRow * Detail::kAccessRows;                            
+    int column_offset = col_idx * Iterations::kColumn * Detail::kAccessWidth * kElementsPerAccess;  //0, 0
 
-    return MatrixCoord(
+    return MatrixCoord(                                                               //0-4 * 32 + 0-2 * 4
       cluster_offset + group_offset + row_offset + lane_row_offset,
-      (column_offset + lane_col_offset) * kElementsPerAccess
-    );
+      (column_offset + lane_col_offset) * kElementsPerAccess                        //0-32
+    );                                                            //< 0~128, 0-32>
   }
 
   /// Computes the offset of a given vector access
@@ -468,28 +469,28 @@ struct OutputTileOptimalThreadMap {
       int lane_idx = thread_idx % kWarpSize;
 
       // Compute warp location
-      int cluster_idx = warp_idx / Detail::WarpPartitions::kCluster;
-      int residual_cluster = warp_idx % Detail::WarpPartitions::kCluster;
+      int cluster_idx = warp_idx / Detail::WarpPartitions::kCluster;    //  /1,   0-4
+      int residual_cluster = warp_idx % Detail::WarpPartitions::kCluster; //  0-2
 
-      int group_idx = residual_cluster / Detail::WarpPartitions::kGroup;
-      int residual_group = residual_cluster % Detail::WarpPartitions::kGroup;
+      int group_idx = residual_cluster / Detail::WarpPartitions::kGroup;//    /0-2
+      int residual_group = residual_cluster % Detail::WarpPartitions::kGroup;   // 0
 
-      int row_idx = residual_group / Detail::WarpPartitions::kRow;
+      int row_idx = residual_group / Detail::WarpPartitions::kRow;    
       int col_idx = residual_group % Detail::WarpPartitions::kRow;
 
       // Compute per-lane offset
       int lane_row_offset = lane_idx / Detail::kAccessWidth;
-      int lane_col_offset = lane_idx % Detail::kAccessWidth;
+      int lane_col_offset = lane_idx % Detail::kAccessWidth;      // 0-32
 
       // Compute coordinate in output space
-      int cluster_offset = cluster_idx * Shape::kRow * Shape::kGroup;
-      int group_offset = group_idx * Shape::kRow;
+      int cluster_offset = cluster_idx * Shape::kRow * Shape::kGroup;     //0-4 * 4
+      int group_offset = group_idx * Shape::kRow;                         //0-2 *1
       int row_offset = row_idx * Iterations::kRow * Detail::kAccessRows;
       int column_offset = col_idx * Iterations::kColumn * Detail::kAccessWidth * kElementsPerAccess;
 
       MatrixCoord coord(
-        cluster_offset + group_offset + row_offset + lane_row_offset,
-        (column_offset + lane_col_offset) * kElementsPerAccess
+        cluster_offset + group_offset + row_offset + lane_row_offset,//0-4*4 + 0-2*1
+        (column_offset + lane_col_offset) * kElementsPerAccess      // 0-32
       );
 
       return coord;

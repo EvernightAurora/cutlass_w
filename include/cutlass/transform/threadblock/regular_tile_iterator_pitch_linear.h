@@ -88,6 +88,7 @@ public:
   static_assert(kAdvanceRank == 0 || kAdvanceRank == 1, 
     "Advance rank may only be along the contiguous or strided dimensions.");
 
+  static const auto SIGN_LINE = __LINE__;
 private:
 
   //
@@ -295,6 +296,7 @@ public:
   using ThreadMap = ThreadMap_;
   static int const kAlignment = Alignment;
 
+  static const auto SIGN_LINE = __LINE__;
   using Index = typename Layout::Index;
   using LongIndex = typename Layout::LongIndex;
 
@@ -437,7 +439,7 @@ public:
   using TensorCoord = typename Layout::TensorCoord;
 
   using Fragment = Array<Element, ThreadMap::Iterations::kCount * ThreadMap::kElementsPerAccess>;
-
+  static const auto SIGN_LINE = __LINE__;
   using Underlying = RegularTileIterator<
     layout::PitchLinearShape<Shape::kRow, Shape::kColumn>,
     Element,

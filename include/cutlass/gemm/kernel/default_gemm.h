@@ -267,7 +267,7 @@ template <
   /// Scatter result D by using an index array
   bool ScatterD
 >
-struct DefaultGemm<
+struct DefaultGemm<         // REVIEW Default GEMM that it use
   ElementA, LayoutA, kAlignmentA,
   ElementB, LayoutB, kAlignmentB,
   ElementC, layout::RowMajor,
@@ -949,6 +949,25 @@ struct DefaultGemm<int8_t, LayoutA, kAlignmentA, int8_t, LayoutB, kAlignmentB,
       2,
       Operator
       >::ThreadblockMma;
+
+    //LINK added MmaType from DefaultGEMM
+  using MmaType = typename cutlass::gemm::threadblock::DefaultMma<
+    ElementA,
+    LayoutA,
+    kAlignmentA,
+    ElementB,
+    LayoutB,
+    kAlignmentB,
+    ElementAccumulator,
+    layout::RowMajor,
+    arch::OpClassTensorOp,
+    arch::Sm75,
+    ThreadblockShape,
+    WarpShape,
+    InstructionShape,
+    2,
+    Operator
+  >;
 
   static int const kEpilogueElementsPerAccess = EpilogueOutputOp::kCount;
   static_assert(kEpilogueElementsPerAccess == 1, "simt epilogue must operate on scalars");

@@ -56,14 +56,14 @@ template <
   typename ThreadblockSwizzle_,   ///! Threadblock swizzling function
   bool SplitKSerial               ///! If true, code supporting split-K via serial reduction is enabled.
 >
-struct Gemm {
+struct Gemm {                     // REVIEW Kernel GEMM
 
   using Mma = Mma_;
   using Epilogue = Epilogue_;
   using OutputOp = typename Epilogue::OutputOp;
   using ThreadblockSwizzle = ThreadblockSwizzle_;
   static bool const kSplitKSerial = SplitKSerial;
-
+  const static auto SIGN_LINE = __LINE__;
   /// Warp count (concept: GemmShape)
   using WarpCount = typename Mma::WarpCount;
   static int const kThreadCount = 32 * WarpCount::kCount;
@@ -199,25 +199,25 @@ struct Gemm {
   }
 
   /// Executes one GEMM
-  CUTLASS_DEVICE
+  CUTLASS_DEVICE            // REVIEW  Kernel Core
   void operator()(Params const &params, SharedStorage &shared_storage) {
 
     // Compute threadblock location
     ThreadblockSwizzle threadblock_swizzle;
 
     cutlass::gemm::GemmCoord threadblock_tile_offset =
-        threadblock_swizzle.get_tile_offset(params.swizzle_log_tile);
+        threadblock_swizzle.get_tile_offset(params.swizzle_log_tile);       // (block.x, block.y, block.z)
 
     // Early exit if CTA is out of range
     if (params.grid_tiled_shape.m() <= threadblock_tile_offset.m() ||
-      params.grid_tiled_shape.n() <= threadblock_tile_offset.n()) {
+      params.grid_tiled_shape.n() <= threadblock_tile_offset.n()) {         // get block from global block count
 
       return;
     }
 
     // Compute initial location in logical coordinates
     cutlass::MatrixCoord tb_offset_A{
-      threadblock_tile_offset.m() * Mma::Shape::kM,
+      threadblock_tile_offset.m() * Mma::Shape::kM,                           //Mma::Shape ~ ThreadblockShape
       threadblock_tile_offset.k() * params.gemm_k_size,
     };
 
@@ -225,7 +225,7 @@ struct Gemm {
       threadblock_tile_offset.k() * params.gemm_k_size,
       threadblock_tile_offset.n() * Mma::Shape::kN
     };
-
+                                                                      //recalc true start M,   K/split_K     N
     // Problem size is a function of threadblock index in the K dimension
     int problem_size_k = min(
       params.problem_size.k(), 

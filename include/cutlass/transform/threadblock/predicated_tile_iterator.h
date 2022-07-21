@@ -158,8 +158,9 @@ class PredicatedTileIterator<Shape_, Element_, layout::PitchLinear, AdvanceRank,
   static_assert(
       AdvanceRank == 0 || AdvanceRank == 1,
       "Specialization for pitch-linear iterator may advance along the "
-      "contiguous(rank=0) or strided(rank=1) dimension.");
+      "contiguous(rank=0) or strided(rank=1) dim`ension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::PitchLinear;
@@ -176,7 +177,7 @@ class PredicatedTileIterator<Shape_, Element_, layout::PitchLinear, AdvanceRank,
   using Pointer = Element *;
   using NonConstPointer = typename platform::remove_const<Element>::type *;
 
-  /// Type used for internal memory accesses
+  /// Type used for internal memory accesses`
   using AccessType = AlignedArray<Element, AccessSize, (AccessSize * sizeof_bits<Element>::value / 8)>;
 
   /// Underlying iterator to compute the addresses
@@ -413,6 +414,7 @@ public:
     "Specialization for pitch-linear iterator may along advance along the "
     "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::ColumnMajor;
@@ -626,6 +628,7 @@ public:
     "Specialization for pitch-linear iterator may along advance along the "
     "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::RowMajor;
@@ -633,7 +636,7 @@ public:
   using ThreadMap = ThreadMap_;
 
   using Index = typename Layout::Index;
-  using LongIndex = typename Layout::LongIndex;
+  using LongIndex = typename Layout::LongIndex;           //int32,  int64
 
   using TensorRef = TensorRef<Element, Layout>;
   using TensorView = TensorView<Element, Layout>;
@@ -832,6 +835,7 @@ class PredicatedTileIterator<Shape_, Element_, layout::AffineRankN<2>, AdvanceRa
       "Specialization for pitch-linear iterator may advance along the "
       "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::AffineRankN<2>;
@@ -1079,6 +1083,7 @@ public:
     "Specialization for pitch-linear iterator may along advance along the "
     "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::AffineRank2ColumnMajor;
@@ -1285,6 +1290,7 @@ public:
     "Specialization for pitch-linear iterator may along advance along the "
     "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::AffineRank2RowMajor;
@@ -1489,6 +1495,7 @@ class PredicatedTileIterator<Shape_, Element_,
       "Specialization for pitch-linear iterator may along advance along the "
       "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   static int const kInterleavedK = InterleavedK;
@@ -1677,6 +1684,7 @@ class PredicatedTileIterator<Shape_, Element_,
       "Specialization for pitch-linear iterator may along advance along the "
       "contiguous(rank=0) or strided(rank=1) dimension.");
 
+  static const auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   static int const kInterleavedK = InterleavedK;

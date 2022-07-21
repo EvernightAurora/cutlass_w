@@ -109,6 +109,7 @@ template <
 class EpilogueBase {
 public:
 
+  static auto const SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using WarpShape = WarpShape_;
   static int const kPartitionsK = PartitionsK;

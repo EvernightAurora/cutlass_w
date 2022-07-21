@@ -71,6 +71,7 @@ template <typename Shape_, typename Element_, typename Layout_, int AdvanceRank,
           typename ThreadMap_, typename AccessType_>
 class PredicatedTileAccessIteratorPredicates {
  public:
+  static auto const SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = Layout_;
@@ -137,24 +138,24 @@ class PredicatedTileAccessIteratorPredicates {
       bool is_steady_state = false) {
 
     CUTLASS_PRAGMA_UNROLL
-    for (int i = 0; i < kPredicateWordCount; ++i) {
+    for (int i = 0; i < kPredicateWordCount; ++i) {       // only 1
       predicates_[i] = 0u;
     }
 
     CUTLASS_PRAGMA_UNROLL
-    for (int access_idx = 0; access_idx < ThreadMap::Iterations::kCount * kAccessesPerVector; ++access_idx) {
+    for (int access_idx = 0; access_idx < ThreadMap::Iterations::kCount * kAccessesPerVector; ++access_idx) { //access:: 0 to 4
 
-      int s = access_idx / (ThreadMap::Iterations::kContiguous * kAccessesPerVector);
+      int s = access_idx / (ThreadMap::Iterations::kContiguous * kAccessesPerVector);     //stride                  // access
       
-      int access_residual = access_idx % (ThreadMap::Iterations::kContiguous * kAccessesPerVector);
+      int access_residual = access_idx % (ThreadMap::Iterations::kContiguous * kAccessesPerVector);   //kcontiguous   // 0
 
-      int c = access_residual / kAccessesPerVector;
-      int v = access_residual % kAccessesPerVector;
+      int c = access_residual / kAccessesPerVector;         //con                                                         0
+      int v = access_residual % kAccessesPerVector;         //0
 
-      TensorCoord iteration_coord(c * ThreadMap::Delta::kContiguous + v * AccessType::kElements,
-                                s * ThreadMap::Delta::kStrided);
+      TensorCoord iteration_coord(c * ThreadMap::Delta::kContiguous + v * AccessType::kElements,    //Tmap::i::con * Tm::delta::con, tmap::i::stride * tm::del::
+                                s * ThreadMap::Delta::kStrided);                                    //(0, istart)
 
-      TensorCoord coord = thread_offset_ + iteration_coord;
+      TensorCoord coord = thread_offset_ + iteration_coord;   
 
       bool guard;
 
@@ -169,12 +170,12 @@ class PredicatedTileAccessIteratorPredicates {
                  coord.contiguous() < extent.contiguous());
       }
 
-      int pred_idx = v + kAccessesPerVector * (c + ThreadMap::Iterations::kContiguous * s);
+      int pred_idx = v + kAccessesPerVector * (c + ThreadMap::Iterations::kContiguous * s);         //access
 
-      int word_idx = pred_idx / kPredicatesPerWord;
+      int word_idx = pred_idx / kPredicatesPerWord;              
       int residual = pred_idx % kPredicatesPerWord;
       int byte_idx = residual / kPredicatesPerByte;
-      int bit_idx = residual % kPredicatesPerByte;
+      int bit_idx = residual % kPredicatesPerByte;                                                  // 0 access 0 
       
       predicates_[word_idx] |= (unsigned(guard) << (byte_idx * 8 + bit_idx));
 
@@ -214,7 +215,7 @@ class PredicatedTileAccessIteratorPredicates {
     }
 
     // Per-thread offset in logical coordinates of tensor
-    thread_offset_ = threadblock_offset + ThreadMap::initial_offset(thread_id);
+    thread_offset_ = threadblock_offset + ThreadMap::initial_offset(thread_id);     //tid % tbK,  / tbK
 
     compute_predicates_(residue_extent, false);
 
@@ -234,11 +235,11 @@ class PredicatedTileAccessIteratorPredicates {
   CUTLASS_HOST_DEVICE
   void set_iteration_index(int index) {
 
-    iteration_vector_ = index % kAccessesPerVector;
-    int residual_access = index / kAccessesPerVector;
+    iteration_vector_ = index % kAccessesPerVector;           // 0
+    int residual_access = index / kAccessesPerVector;         // index
 
-    iteration_contiguous_ = residual_access % ThreadMap::Iterations::kContiguous;
-    iteration_strided_ = residual_access / ThreadMap::Iterations::kContiguous;
+    iteration_contiguous_ = residual_access % ThreadMap::Iterations::kContiguous;       //0
+    iteration_strided_ = residual_access / ThreadMap::Iterations::kContiguous;          //index 
 
   }
 
@@ -327,7 +328,7 @@ class PredicatedTileAccessIterator<Shape_, Element_, layout::PitchLinear,
       AdvanceRank == 0 || AdvanceRank == 1,
       "Specialization for pitch-linear iterator may along advance along the "
       "contiguous(rank=0) or strided(rank=1) dimension.");
-
+  const static auto SIGN_LINE = __LINE__;
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::PitchLinear;

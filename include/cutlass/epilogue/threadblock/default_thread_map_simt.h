@@ -63,7 +63,7 @@ struct DefaultThreadMapSimt {
   static int const kPartitionsK = PartitionsK;
   using Element = Element_;
   static int const kElementsPerAccess = ElementsPerAccess;
-
+  static auto const SIGN_LINE = __LINE__;
   //
   // Definitions
   //
@@ -100,18 +100,18 @@ struct DefaultThreadMapSimt {
   
   /// ThreadMap to be used by epilogue::PredicatedTileIterator satisfying concept OutputTileThreadMap
   using Type = OutputTileOptimalThreadMap<
-    OutputTileShape<                          // Shape
-      ThreadblockShape::kN, 
-      1, 
-      MmaSimtPolicy::WarpShape::kRow, 
-      Detail::WarpCount::kM, 
+    OutputTileShape<                          // Shape    
+      ThreadblockShape::kN,                     //col
+      1,                                        //row
+      MmaSimtPolicy::WarpShape::kRow,            //group
+      Detail::WarpCount::kM,        //ThreadblockShape::kM / WarpShape::kM,     //cluster
       1>,
     OutputTileShape<                          // Count
-      1, 
-      MmaSimtPolicy::LaneMmaShape::kM, 
-      Detail::kGroupCount, 
-      1, 
-      Detail::kIterations>,
+      1,                                      //shape
+      MmaSimtPolicy::LaneMmaShape::kM,        //row
+      Detail::kGroupCount,      //2                //WarpShape::kM / (MmaSimtPolicy::WarpShape::kRow * MmaSimtPolicy::LaneMmaShape::kM); //group
+      1,                                          //cluster
+      Detail::kIterations>,     //8             //WarpShape::kM / MmaSimtPolicy::WarpShape::kRow
     Detail::kThreads,
     kElementsPerAccess,
     sizeof_bits<Element>::value

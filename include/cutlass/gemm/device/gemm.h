@@ -284,7 +284,11 @@ class Gemm {
     ThreadblockSwizzle,
     kStages,
     kSplitKSerial,
-    Operator
+    Operator,
+    SharedMemoryClearOption::kNone,
+    GatherA,
+    GatherB,
+    ScatterD
   >;
 
   /// Define the kernel

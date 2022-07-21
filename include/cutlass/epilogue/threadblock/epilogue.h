@@ -96,7 +96,7 @@ class Epilogue :
     FragmentsPerPartition> {
 
 public:
-
+  static const auto SIGN_LINE = __LINE__;
   using Base = EpilogueBase<
     Shape_, 
     typename WarpMmaOperator_::Shape, 
@@ -115,6 +115,7 @@ public:
   using SharedLoadIterator = SharedLoadIterator_;
   using OutputOp = OutputOp_;
   using Padding = Padding_;
+
 
   using Layout = layout::RowMajor;
   using LongIndex = typename Layout::LongIndex;

@@ -70,7 +70,7 @@ template <
   typename ElementB, 
   typename ElementC, 
   typename ElementAccumulator>
-struct DefaultGemmConfiguration<
+struct DefaultGemmConfiguration<      //ANCHOR DefaultGemmConfig we used
   arch::OpClassSimt, 
   ArchTag,
   ElementA, 
@@ -190,7 +190,7 @@ template <
   typename ElementB, 
   typename ElementC, 
   typename ElementAccumulator>
-struct DefaultGemmConfiguration<
+struct DefaultGemmConfiguration<      // -REVIEW DefaultGemmConfiguration
   arch::OpClassTensorOp, 
   arch::Sm75,
   ElementA, 

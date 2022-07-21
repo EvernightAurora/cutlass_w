@@ -119,6 +119,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using LayoutC = LayoutC_;
   using OperatorClass = arch::OpClassSimt;
   static int const PartitionsK = Shape::kK / WarpShape::kK;
+  static const auto SIGN_LINE = __LINE__;
 
   /// Default Operator
   using Operator = Operator_;
@@ -276,6 +277,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using OperatorClass = arch::OpClassSimt;
   static int const PartitionsK = Shape::kK / WarpShape::kK;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -445,6 +447,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using OperatorClass = arch::OpClassSimt;
   static int const PartitionsK = Shape::kK / WarpShape::kK;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -483,7 +486,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
 
   /// ThreadMap of iterator A
   using IteratorThreadMapA = transform::PitchLinearStripminedThreadMap<
-    layout::PitchLinearShape<Shape::kK, Shape::kM>,
+    layout::PitchLinearShape<Shape::kK, Shape::kM>,                         //8 128,   256, 1
     kThreads,
     kElementsPerAccess
   >;
@@ -610,6 +613,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using OperatorClass = arch::OpClassSimt;
   static int const PartitionsK = Shape::kK / WarpShape::kK;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -777,6 +781,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   /// Default Operator
   using Operator = Operator_;
 
+  static const auto SIGN_LINE = __LINE__;
   using Base = DefaultMmaCore<Shape,
                               WarpShape,
                               InstructionShape,
@@ -861,6 +866,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using LayoutC = LayoutC_;
   using OperatorClass = arch::OpClassSimt;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -948,6 +954,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using LayoutC = LayoutC_;
   using OperatorClass = arch::OpClassSimt;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -1034,7 +1041,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   using ElementC = ElementC_;
   using LayoutC = LayoutC_;
   using OperatorClass = arch::OpClassSimt;
-
+  
   /// Default Operator
   using Operator = Operator_;
 
@@ -1055,6 +1062,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 1>, ElementA_,
   // Shared memory layouts
   //
 
+  static const auto SIGN_LINE = __LINE__;
   using SmemLayoutA = typename Base::SmemLayoutA;
   using SmemLayoutB = typename Base::SmemLayoutB;
 
@@ -1130,6 +1138,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 4>, int8_t,
     PartitionsK
   >;
 
+  static const auto SIGN_LINE = __LINE__;
   // Divisility requirements
   static_assert(
     !(Shape::kM % WarpShape::kM) &&
@@ -1375,6 +1384,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 4>, int8_t,
       LaneMmaShape
   >;
 
+  static const auto SIGN_LINE = __LINE__;
   using MmaWarpSimt = cutlass::gemm::warp::MmaSimt<
     WarpShape,    /// Size of the Gemm problem - concept: gemm::GemmShape<> 128, 128, 8
     ElementA,     /// Data type of A elements
@@ -1437,6 +1447,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 4>, int8_t,
   using OperatorClass = arch::OpClassSimt;
   static int const PartitionsK = Shape::kK / WarpShape::kK;
 
+  static const auto SIGN_LINE = __LINE__;
   /// Default Operator
   using Operator = Operator_;
 
@@ -1606,6 +1617,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, GemmShape<1, 1, 4>, int8_t,
     PartitionsK
   >;
 
+  static const auto SIGN_LINE = __LINE__;
   // Divisility requirements
   static_assert(
     !(Shape::kM % WarpShape::kM) &&

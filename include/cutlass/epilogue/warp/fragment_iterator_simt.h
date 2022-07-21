@@ -79,6 +79,7 @@ public:
   using WarpShape = WarpShape_;
   using Operator = Operator_;
   using Layout = layout::RowMajor;
+  static const auto SIGN_LINE = __LINE__;
 
   /// Policy for warp-level epilogue components
   using Policy = SimtPolicy<WarpShape, Operator, Layout, MmaSimtPolicy_>;

@@ -76,6 +76,7 @@ class PredicatedTileIterator {
 public:
   using ThreadMap = ThreadMap_;
   using Shape = typename ThreadMap::Shape;
+  static auto const SIGN_LINE = __LINE__;
 
   using Element = Element_;
 

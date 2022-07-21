@@ -93,18 +93,21 @@ struct DefaultEpilogueSimt {
   using LayoutC = typename WarpMmaSimt::LayoutC;
   using ElementAccumulator = typename WarpMmaSimt::ElementC;
 
+  static auto const SIGN_LINE = __LINE__;
+
   //
   // Thread map
   //
-
-  using OutputTileThreadMap = typename cutlass::epilogue::threadblock::DefaultThreadMapSimt<
+  using OutputTileThreadMapShell = cutlass::epilogue::threadblock::DefaultThreadMapSimt<
     Shape,
     typename WarpMmaSimt::Shape,
     typename WarpMmaSimt::Policy,
     kPartitionsK,
     ElementOutput,
     kElementsPerAccess
-  >::Type;
+  >;
+
+  using OutputTileThreadMap = typename OutputTileThreadMapShell::Type;
 
   using OutputTileIterator = cutlass::epilogue::threadblock::PredicatedTileIterator<
     OutputTileThreadMap,

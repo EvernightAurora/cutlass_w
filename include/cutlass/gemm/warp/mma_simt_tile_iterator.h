@@ -103,6 +103,7 @@ public:
 
   /// Operand tag
   static Operand const kOperand = Operand::kA;
+  static const auto SIGN_LINE = __LINE__;
 
   /// Element type
   using Element = Element_;
@@ -139,7 +140,7 @@ public:
 
   /// Thread-level shape of a fragment
   using ThreadShape = MatrixShape<
-    Shape::kRow / Policy::WarpShape::kRow,
+    Shape::kRow / Policy::WarpShape::kRow,      
     Shape::kColumn
   >;
 
@@ -174,10 +175,10 @@ public:
   ) {
 
     // compute offset based on thread ID and lane layout
-    typename Policy::LaneLayout lane_layout = Policy::get_lane_layout();
+    typename Policy::LaneLayout lane_layout = Policy::get_lane_layout();    //<4, 8> in fact   <2, 16> inter  saved
 
     MatrixCoord lane_offset = lane_layout.inverse(lane_id) * 
-      MatrixCoord(Policy::LaneMmaShape::kM, 0);
+      MatrixCoord(Policy::LaneMmaShape::kM, 0);                         //<4 * lid_offset_m, 0>
 
     ref.add_coord_offset(lane_offset);
 
@@ -313,6 +314,8 @@ public:
 
   /// Operand tag
   static Operand const kOperand = Operand::kA;
+
+  static auto const SIGN_LINE = __LINE__;
 
   /// Element type
   using Element = Element_;
@@ -567,6 +570,8 @@ public:
   /// Operand tag
   static Operand const kOperand = Operand::kB;
 
+  static auto const SIGN_LINE = __LINE__;
+
   /// Element type
   using Element = Element_;
 
@@ -603,7 +608,7 @@ public:
   /// Thread-level shape of a fragment
   using ThreadShape = MatrixShape<
     Shape::kRow,
-    Shape::kColumn / Policy::WarpShape::kColumn
+    Shape::kColumn / Policy::WarpShape::kColumn           //<1, 8>
   >;
 
   static_assert(!(ThreadShape::kColumn % Policy::LaneMmaShape::kN), 
@@ -612,7 +617,7 @@ public:
   /// Number of individual loads
   using Iterations = MatrixShape<
     ThreadShape::kRow,
-    ThreadShape::kColumn / Policy::LaneMmaShape::kN
+    ThreadShape::kColumn / Policy::LaneMmaShape::kN         //<1, 2>
   >;
 
   /// Fragment object holding a thread's part of a tile
@@ -1235,6 +1240,7 @@ public:
 
   /// Operand tag
   static Operand const kOperand = Operand::kC;
+  static auto const SIGN_LINE = __LINE__;
 
   /// Element type
   using Element = Element_;

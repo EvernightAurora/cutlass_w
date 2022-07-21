@@ -2045,7 +2045,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
     >;         /// Used for partial specialization
 
   /// Policy used to define MmaPipelined
-  using MmaPolicy = MmaPolicy<
+  using MmaPolicy = MmaPolicy<          // REVIEW  out policy
     MmaWarpSimt,
     MatrixShape<0, 0>,
     MatrixShape<0, Shape::kK / 32>,

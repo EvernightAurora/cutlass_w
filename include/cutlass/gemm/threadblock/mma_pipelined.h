@@ -107,6 +107,7 @@ public:
 
   using TransformA = TransformA_;
   using TransformB = TransformB_;
+  const static auto SIGN_LINE = __LINE__;
 
   //
   // Dependent types

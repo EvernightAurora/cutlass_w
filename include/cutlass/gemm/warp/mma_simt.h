@@ -85,7 +85,7 @@ class MmaSimt {
 public:
   /// Shape of warp-level matrix operation (concept: GemmShape)
   using Shape = Shape_;
-
+  static auto const SIGN_LINE = __LINE__;
   /// Data type of multiplicand A
   using ElementA = ElementA_;
 

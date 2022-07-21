@@ -71,7 +71,7 @@ template <
 >
 class TileIteratorSimt<WarpShape_, Operator_, Element_, layout::RowMajor, MmaSimtPolicy_> {
 public:
-
+  static auto const SIGN_LINE = __LINE__;
   using WarpShape = WarpShape_;
   using Operator = Operator_;
   using Element = Element_;

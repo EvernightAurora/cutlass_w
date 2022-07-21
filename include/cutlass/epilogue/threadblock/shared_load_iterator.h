@@ -68,7 +68,7 @@ class SharedLoadIterator {
 public:
   using ThreadMap = ThreadMap_;
   using Shape = typename ThreadMap::TileShape;
-
+  static auto const SIGN_LINE = __LINE__;
   using Element = Element_;
 
   using Layout = layout::RowMajor;

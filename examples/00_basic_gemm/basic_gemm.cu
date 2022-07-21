@@ -107,6 +107,26 @@ cudaError_t CutlassSgemmNN(
                                                   float,        // Data-type of C matrix
                                                   ColumnMajor>; // Layout of C matrix
 
+  using GEMM_TYPE = CutlassGemm::UnderlyingOperator::DefaultType;
+  auto gemm_type = GEMM_TYPE();
+
+  using MMA_TYPE = GEMM_TYPE::MmaType;
+  auto mma_type = MMA_TYPE();
+
+  using SHARED_TYPE = GEMM_TYPE::GemmKernel::SharedStorage;
+  auto shared_type1 = SHARED_TYPE();
+
+  using MMA_POLICY = MMA_TYPE::MmaCore::MmaPolicy;
+  auto mma_policy = MMA_POLICY();
+
+  using TEST_A = MMA_TYPE::MmaCore::Shape;
+  auto test_a = TEST_A();
+
+  using KERNEL_GEMM = GEMM_TYPE::GemmKernel;
+  auto kernel_gemm = KERNEL_GEMM();
+
+
+
   // Define a CUTLASS GEMM type
   CutlassGemm gemm_operator;
 
@@ -276,7 +296,7 @@ cudaError_t ReferenceGemm(
   );
 
   ReferenceGemm_kernel<<< grid, block >>>(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
-
+  cudaDeviceSynchronize();
   return cudaGetLastError();
 }
 
@@ -486,7 +506,7 @@ int main(int argc, const char *arg[]) {
     scalars[1]      // beta
   );
 
-  if (result == cudaSuccess) {
+  if (result == cudaSuccess) {   
     std::cout << "Passed." << std::endl;
   }
 

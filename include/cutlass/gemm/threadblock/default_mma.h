@@ -145,6 +145,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
                   InstructionShape, 2, Operator, false, SharedMemoryClearOption::kNone,
                   GatherA, GatherB> {
 
+  static const auto SIGN_LINE = __LINE__;
   static_assert(platform::is_same<LayoutC, layout::RowMajor>::value
              || platform::is_same<LayoutC, layout::AffineRankN<2>>::value,
              "simt epilogue must be row major");
@@ -220,6 +221,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
       ElementB, LayoutB, ElementAccumulator, layout::RowMajor,
       arch::OpClassTensorOp, 2, Operator>;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define iterators over tiles from the A operand
   using IteratorA =
       cutlass::transform::threadblock::PredicatedTileIterator<
@@ -278,6 +280,7 @@ struct DefaultMma<float, LayoutA, kAlignmentA, float, LayoutB,
       LayoutB, float, layout::RowMajor, arch::OpClassTensorOp, 2,
       arch::OpMultiplyAddFastF16>;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define iterators over tiles from the A operand
   using IteratorA =
       cutlass::transform::threadblock::PredicatedTileIterator<
@@ -341,6 +344,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
       layout::ColumnMajorInterleaved<InterleavedK>, OperatorClass, 2, Operator,
       true>;
 
+  static const auto SIGN_LINE = __LINE__;
   static_assert(kAlignmentA == 128 / sizeof_bits<ElementA>::value, 
     "Alignment must match thread data map's vector length");
 
@@ -412,6 +416,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
              || platform::is_same<LayoutC, layout::AffineRankN<2>>::value,
              "simt epilogue must be row major");
 
+  static const auto SIGN_LINE = __LINE__;
   // Define the MmaCore components
   using MmaCore = typename cutlass::gemm::threadblock::DefaultMmaCore<
       ThreadblockShape, WarpShape, InstructionShape, ElementA, LayoutA,
@@ -487,6 +492,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
                   InstructionShape, Stages, Operator, false, SharedMemoryClear,
                   GatherA, GatherB> {
 
+  static const auto SIGN_LINE = __LINE__;
   static_assert(platform::is_same<LayoutC, layout::RowMajor>::value
              || platform::is_same<LayoutC, layout::AffineRankN<2>>::value,
              "simt epilogue must be row major");
@@ -585,6 +591,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
           cutlass::MatrixShape<ThreadblockShape::kM, ThreadblockShape::kK>,
           ElementA, LayoutA, 1, ThreadMapA, AccessTypeA>;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define iterators over tiles from the B operand
   using ThreadMapB = typename MmaCore::IteratorThreadMapB;
   using AccessTypeB = cutlass::Array<ElementB, kAlignmentB>;
@@ -635,6 +642,7 @@ struct DefaultMma<int8_t, LayoutA, kAlignmentA, int8_t, LayoutB, kAlignmentB,
   static const bool transposeA =  platform::is_same< LayoutA, layout::ColumnMajor >::value;
   static const bool transposeB =  platform::is_same< LayoutB, layout::RowMajor >::value;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define the MmaCore components
   using MmaCore = typename cutlass::gemm::threadblock::DefaultMmaCore<
       ThreadblockShape, WarpShape, InstructionShape, ElementA, LayoutA,
@@ -708,6 +716,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
           cutlass::MatrixShape<MmaCore::Shape::kM, MmaCore::Shape::kK>,
           ElementA, LayoutA, 1, typename MmaCore::IteratorThreadMapA, kAlignmentA>;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define iterators over tiles from the B operand
   using IteratorB =
       cutlass::transform::threadblock::PredicatedTileIterator<
@@ -774,6 +783,7 @@ struct DefaultMma<ElementA, LayoutA, kAlignmentA, ElementB, LayoutB,
           cutlass::MatrixShape<MmaCore::Shape::kK, MmaCore::Shape::kN>,
           ElementB, LayoutB, 0, typename MmaCore::IteratorThreadMapB, kAlignmentB>;
 
+  static const auto SIGN_LINE = __LINE__;
   // Define the threadblock-scoped singlestage matrix multiply
   using ThreadblockMma = cutlass::gemm::threadblock::MmaSingleStage<
       typename MmaCore::Shape, IteratorA, typename MmaCore::SmemIteratorA,
