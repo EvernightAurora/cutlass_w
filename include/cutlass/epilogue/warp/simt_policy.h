@@ -68,19 +68,20 @@ struct SimtPolicy<WarpShape_, Operator_, layout::RowMajor, MmaSimtPolicy_> {
   using WarpShape = WarpShape_;
   using Operator = Operator_;
   using MmaSimtPolicy = MmaSimtPolicy_;
+  static auto const SIGN_LINE = __LINE__;
 
   static_assert(!(WarpShape::kM % MmaSimtPolicy::WarpShape::kRow), "Divisibility");
   static_assert(!(WarpShape::kN % MmaSimtPolicy::WarpShape::kColumn), "Divisibility");
 
   /// Number of iterations
-  static int const kIterations = WarpShape::kM / MmaSimtPolicy::WarpShape::kRow;
+  static int const kIterations = WarpShape::kM / MmaSimtPolicy::WarpShape::kRow;        //8
 
   /// Number of accumulators written per iteration
   static int const kElementsPerIteration = 
-    (WarpShape::kN / MmaSimtPolicy::WarpShape::kColumn);
+    (WarpShape::kN / MmaSimtPolicy::WarpShape::kColumn);                              //8
 
   /// Total number of accumulators
-  static int const kAccumulatorElementCount = kElementsPerIteration * kIterations;
+  static int const kAccumulatorElementCount = kElementsPerIteration * kIterations;    //64 
 
   /// Number of consecutive elements
   static int const kElementsPerAccess = MmaSimtPolicy::LaneMmaShape::kN;

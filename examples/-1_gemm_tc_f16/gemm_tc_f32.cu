@@ -432,7 +432,9 @@ int main(){
     std::cout<<"EPILOGUE::OutputTileThreadMap::OutputTileOptimalThreadMap: "<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::SIGN_LINE<<std::endl;
     std::cout<<"EPILOGUE::OutputTileIterator: "<<MY_GEMM::RegularEpilogueShell::OutputTileIterator::SIGN_LINE<<std::endl;
     std::cout<<"EPILOGUE::AccumlatorFragmentIterator: "<<MY_GEMM::RegularEpilogueShell::AccumulatorFragmentIterator::SIGN_LINE<<std::endl;
+    std::cout<<"EPILOGUE::AccumlatorFragmentIterator::Policy: "<<MY_GEMM::RegularEpilogueShell::AccumulatorFragmentIterator::Policy::SIGN_LINE<<std::endl;
     std::cout<<"EPILOGUE::WarpTileIterator: "<<MY_GEMM::RegularEpilogueShell::WarpTileIterator::SIGN_LINE<<std::endl;
+    std::cout<<"EPILOGUE::WarpTileIterator::Policy: "<<MY_GEMM::RegularEpilogueShell::WarpTileIterator::Policy::SIGN_LINE<<std::endl;
     std::cout<<"EPILOGUE::SharedLoadIterator: "<<MY_GEMM::RegularEpilogueShell::SharedLoadIterator::SIGN_LINE<<std::endl;
 
     std::cout<<"EPILOGUE::Epilogue: "<<MY_GEMM::Epilogue::SIGN_LINE<<std::endl;
@@ -441,6 +443,13 @@ int main(){
     std::cout<<"MmaWarpSimt::Shape  ";SHOW_TYPE(MY_GEMM::MmaWarpSimt::Shape);
     std::cout<<"Policy::WarpShape  ";SHOW_TYPE(MY_GEMM::Policy::WarpShape);
     std::cout<<"Policy::LaneLayout  ";SHOW_TYPE(MY_GEMM::Policy::LaneLayout);
+
+    std::cout<<MY_GEMM::RegularEpilogueShell::WarpTileIterator::Policy::kElementsPerIteration<<std::endl;
+    std::cout<<MY_GEMM::RegularEpilogueShell::WarpTileIterator::Policy::kElementsPerAccess<<std::endl;
+    std::cout<<MY_GEMM::RegularEpilogueShell::WarpTileIterator::Policy::kAccessesPerIteration<<std::endl;
+    
+    
+    /*
 
     std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kIterationsCluster<<std::endl;
     std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kDeltaCluster<<std::endl;
@@ -451,9 +460,11 @@ int main(){
     std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kDeltaGroup<<std::endl;
     std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kCompactedDeltaGroup<<std::endl;
     std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kWarpPartitionsGroup<<std::endl;
-    std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kWarpsRemainingForRows<<std::endl;
+    std::cout<<MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Detail::kWarpsRemainingForRows<<std::endl;*/
     SHOW_TYPE(MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Iterations);
     SHOW_TYPE(MY_GEMM::RegularEpilogueShell::OutputTileThreadMapShell::Type::Delta);
+    SHOW_TYPE(MY_GEMM::RegularEpilogueShell::OutputTileThreadMap::CompactedThreadMap::Iterations);
+    SHOW_TYPE(MY_GEMM::RegularEpilogueShell::OutputTileThreadMap::CompactedThreadMap::Delta);
     auto v = MY_GEMM::RegularEpilogueShell::OutputTileThreadMap::CompactedThreadMap::initial_offset(188);
     std::cout<<"PT"<<v.row()<<','<<v.column()<<std::endl;
     

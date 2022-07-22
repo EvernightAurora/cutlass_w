@@ -284,18 +284,18 @@ public:
     AccessType *frag_ptr = reinterpret_cast<AccessType *>(&frag);
 
     CUTLASS_PRAGMA_UNROLL
-    for (int cluster = 0; cluster < ThreadMap::Iterations::kCluster; ++cluster) {
+    for (int cluster = 0; cluster < ThreadMap::Iterations::kCluster; ++cluster) {       //1
 
       CUTLASS_PRAGMA_UNROLL
-      for (int group = 0; group < ThreadMap::Iterations::kGroup; ++group) {
+      for (int group = 0; group < ThreadMap::Iterations::kGroup; ++group) {             //2
 
         CUTLASS_PRAGMA_UNROLL
-        for (int row = 0; row < ThreadMap::Iterations::kRow; ++row) {
+        for (int row = 0; row < ThreadMap::Iterations::kRow; ++row) {                 //1
 
           int frag_row_idx = 
-            (row + ThreadMap::Iterations::kRow * (group + ThreadMap::Iterations::kGroup * cluster));
+            (row + ThreadMap::Iterations::kRow * (group + ThreadMap::Iterations::kGroup * cluster));      // group
 
-          int row_offset = row * ThreadMap::Delta::kRow 
+          int row_offset = row * ThreadMap::Delta::kRow                 //group * 8
             + group * ThreadMap::Delta::kGroup 
             + cluster * ThreadMap::Delta::kCluster;
 
@@ -311,7 +311,7 @@ public:
           }
 
           CUTLASS_PRAGMA_UNROLL
-          for (int column = 0; column < ThreadMap::Iterations::kColumn; ++column) {
+          for (int column = 0; column < ThreadMap::Iterations::kColumn; ++column) {     //4
 
             bool guard = row_guard && mask_.predicates[column];
 

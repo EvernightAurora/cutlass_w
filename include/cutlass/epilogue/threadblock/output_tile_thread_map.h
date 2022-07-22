@@ -415,8 +415,8 @@ struct OutputTileOptimalThreadMap {
     // Compute coordinate in output space
     int cluster_offset = cluster_idx * Shape::kRow * Count::kRow * Shape::kGroup * Count::kGroup; //0-4 * 32
     int group_offset = group_idx * Shape::kRow * Count::kRow;                                     //0-2 * 4
-    int row_offset = row_idx * Iterations::kRow * Detail::kAccessRows;                            
-    int column_offset = col_idx * Iterations::kColumn * Detail::kAccessWidth * kElementsPerAccess;  //0, 0
+    int row_offset = row_idx * Iterations::kRow * Detail::kAccessRows;                            //~ * 1
+    int column_offset = col_idx * Iterations::kColumn * Detail::kAccessWidth * kElementsPerAccess;  //~ * 4
 
     return MatrixCoord(                                                               //0-4 * 32 + 0-2 * 4
       cluster_offset + group_offset + row_offset + lane_row_offset,
