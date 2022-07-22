@@ -104,7 +104,7 @@ struct DefaultThreadMapSimt {
       ThreadblockShape::kN,                     //col
       1,                                        //row
       MmaSimtPolicy::WarpShape::kRow,            //group
-      Detail::WarpCount::kM,        //ThreadblockShape::kM / WarpShape::kM,     //cluster
+      Detail::WarpCount::kM,        //ThreadblockShape::kM / WarpShape::kM,     //cluster  
       1>,
     OutputTileShape<                          // Count
       1,                                      //shape
@@ -117,6 +117,18 @@ struct DefaultThreadMapSimt {
     sizeof_bits<Element>::value
   >;
 };
+/*
+      
+shape:          Count:
+        128           1
+        1             4      // every parts contiguous read 4 lines
+        4             2     //32 wShape::M iteratored 2 times,  each divide into 4 parts(by lane_idx)
+        4             1     //128 tbShape::M divide into 4 parts(by warp_idx)
+        1             8
+
+count:          1         4         2         2         1
+
+*/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

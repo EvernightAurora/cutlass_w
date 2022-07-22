@@ -361,6 +361,7 @@ private:
                      AccumulatorFragmentIterator const &iterator_begin,
                      WarpTileIterator &warp_tile_iterator) {
       int dummy[] = {(pos == Seq) && (helper<Seq>(iterator_begin, warp_tile_iterator), 0)...};
+      // static int dummy[] = {helper<Seq>}
     }
   };
 
