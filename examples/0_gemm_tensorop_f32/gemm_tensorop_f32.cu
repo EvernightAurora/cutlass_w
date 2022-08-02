@@ -1,9 +1,42 @@
 #include "cutlass/cutlass.h"
 #include "cutlass/gemm/device/gemm.h"
+#include <iostream>
 
+template<typename T1, typename T2, int LINE>
+struct ASSERT_TYPE_{
+    ASSERT_TYPE_(){
+        std::cout<<"Assertion Fault at line "<<LINE<<" that  ";
+        std::cout<<typeid(T1).name()<<" is not "<<typeid(T2).name();
+        std::cout<<"   at "<<__ASSERT_FUNCTION;
+        std::cout<<std::endl;
+        std::cout.flush();
+    }
+};
+
+template<typename T1, int LINE>
+struct ASSERT_TYPE_<T1, T1, LINE>{
+};
+
+#define ASSERT_TYPE(a1, a2)  {auto _A_T = (void*) new ASSERT_TYPE_<a1, a2, __LINE__>();}
+
+template<typename T, int LINE>
+struct S_T_{
+    S_T_(){
+        char Buf[1100];
+        strcpy(Buf, __ASSERT_FUNCTION + 32);
+        int l = strlen(Buf);
+        while(Buf[l-1] != ';')
+            --l;
+        Buf[l] = '\0';
+        std::cout<<"This Type at line " << LINE<< " ";
+        std::cout<<" is  "<<Buf<<std::endl;
+    };
+};
+
+#define SHOW_TYPE(t)  {auto S_T_##__LINE__ = S_T_<t, __LINE__>();}
 
 using LayoutABCD = cutlass::layout::RowMajor;
-using TypeAPCD = float;
+using TypeABCD = cutlass::half_t;
 using TA = TypeABCD;
 using TB = TypeABCD;
 using TC = TypeABCD;
@@ -18,7 +51,7 @@ const int M=333, N=222, K=99;
 TA* pA, *dpA;
 TB *pB, *dpB;
 TC *pC, *dpC;
-ElementOutput *pD, *dpD;
+TD *pD, *dpD;
 
 template<typename T, typename MAJOR>
 struct MakeMatrix{
@@ -88,10 +121,30 @@ void Init_MM(){
 
 using Gemm = cutlass::gemm::device::Gemm<
     TA, LayoutA, TB, LayoutB, TC, LayoutC,
-    TD, cutlass::arch::OpClassTensorOp>;
+    TD, cutlass::arch::OpClassTensorOp, cutlass::arch::Sm75,
+    cutlass::gemm::GemmShape<128, 128, 32>, cutlass::gemm::GemmShape<64, 64, 32>,
+    cutlass::gemm::GemmShape<16, 8, 8>>;
 
+void Show(){
+    SHOW_TYPE(Gemm::DefaultType::MmaType::ThreadblockMma::Operator::IteratorC::Policy::MmaIterations);
+    std::cout<<(Gemm::DefaultType::MmaType::ThreadblockMma::Operator::IteratorC::Fragment::kElements)<<std::endl;
+    SHOW_TYPE(Gemm::DefaultType::Epilogue::SharedStorage::StorageShape);
+    SHOW_TYPE(Gemm::DefaultType::Mma::Operator::IteratorC::Shape);
+    std::cout<<"Gemm::EpilogueShell:  "<<Gemm::DefaultType::EpilogueShell::SIGN_LINE<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::OutputTileIterator:  "<<Gemm::DefaultType::EpilogueShell::OutputTileIterator::SIGN_LINE<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::OutputTileThreadMapShell:  "<<Gemm::DefaultType::EpilogueShell::OutputTileThreadMapShell::SIGN_LINE<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::AccumulatorFragmentIterator::Policy:  "<<Gemm::DefaultType::EpilogueShell::AccumulatorFragmentIterator::Policy::SIGN_LINE<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::OutputTileThreadMap::RowArrange::kAccessRow:  "<<Gemm::DefaultType::EpilogueShell::OutputTileThreadMap::Detail::RowArrangement::kAccessRows<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::TileIteratorTensorOp:  "<<Gemm::DefaultType::EpilogueShell::WarpTileIterator::SIGN_LINE<<std::endl;
+    std::cout<<"Gemm::EpilogueShell::SharedLoadIterator:  "<<Gemm::DefaultType::EpilogueShell::SharedLoadIterator::SIGN_LINE<<std::endl;
+    SHOW_TYPE(Gemm::DefaultType::EpilogueShell::OutputTileThreadMap::Iterations);
+    SHOW_TYPE(Gemm::DefaultType::EpilogueShell::OutputTileThreadMap::Delta);
+    SHOW_TYPE(Gemm::DefaultType::EpilogueShell::OutputTileThreadMap::Detail::WarpPartitions);
 
+    
+}
 
 int main(){
+    Show();
     return 0;
 }

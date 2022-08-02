@@ -62,7 +62,7 @@ struct DefaultThreadMapTensorOp {
   static int const kPartitionsK = PartitionsK;
   using Element = Element_;
   static int const kElementsPerAccess = ElementsPerAccess;
-
+  static auto const SIGN_LINE = __LINE__;
   //
   // Definitions
   //

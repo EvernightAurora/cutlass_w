@@ -315,11 +315,17 @@ struct DefaultEpilogueTensorOp {
   using ElementOutput = typename OutputOp::ElementOutput;
   using LayoutC = typename WarpMmaTensorOp::LayoutC;
   using ElementAccumulator = typename WarpMmaTensorOp::ElementC;
-
+  static auto const SIGN_LINE = __LINE__;
   //
   // Thread map
   //
-
+  using OutputTileThreadMapShell = typename cutlass::epilogue::threadblock::DefaultThreadMapTensorOp<
+    Shape,
+    typename WarpMmaTensorOp::Shape,
+    kPartitionsK,
+    ElementOutput,
+    kElementsPerAccess
+  >;
   using OutputTileThreadMap = typename cutlass::epilogue::threadblock::DefaultThreadMapTensorOp<
     Shape,
     typename WarpMmaTensorOp::Shape,

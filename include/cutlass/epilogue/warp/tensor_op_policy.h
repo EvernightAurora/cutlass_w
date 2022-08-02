@@ -63,7 +63,7 @@ template <
   typename OperatorShape        ///< matrix multiply operation shape (concept: gemm::GemmShape)
 >
 struct TensorOpPolicy<WarpShape, OperatorShape, layout::RowMajor> {
-
+  static auto const SIGN_LINE = __LINE__;
   /// Number of operations
   using OperatorCount = MatrixShape<
     (WarpShape::kM + OperatorShape::kM - 1) / OperatorShape::kM,

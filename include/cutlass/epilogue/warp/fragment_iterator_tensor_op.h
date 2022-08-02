@@ -83,7 +83,7 @@ public:
   using OperatorElementC = OperatorElementC_;
   using OperatorFragmentC = OperatorFragmentC_;
   using Layout = layout::RowMajor;
-
+  static const auto SIGN_LINE = __LINE__;
   using Policy = TensorOpPolicy<WarpShape, OperatorShape, Layout>;
 
   /// This is the fragment size produced by one access of the iterator.

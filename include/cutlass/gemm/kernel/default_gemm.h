@@ -337,6 +337,14 @@ struct DefaultGemm<         // REVIEW Default GEMM that it use
 
   static const int kPartitionsK = ThreadblockShape::kK / WarpShape::kK;
 
+  using EpilogueShell = typename cutlass::epilogue::threadblock::DefaultEpilogueTensorOp<
+    ThreadblockShape,
+    typename Mma::Operator,
+    kPartitionsK,
+    EpilogueOutputOp,
+    EpilogueOutputOp::kCount,
+    ScatterD
+  >;
   /// Define the epilogue
   using Epilogue = typename cutlass::epilogue::threadblock::DefaultEpilogueTensorOp<
     ThreadblockShape,

@@ -2428,7 +2428,7 @@ class MmaTensorOpAccumulatorTileIterator<
     /// Number of mma operations performed
     using MmaIterations = MatrixShape<
       (Shape::kRow + InstructionShape::kM - 1) / InstructionShape::kM,
-      (Shape::kColumn + InstructionShape::kN - 1) / InstructionShape::kN
+      (Shape::kColumn + InstructionShape::kN - 1) / InstructionShape::kN      //<4, 8> ofcourse
     >;
   };
 
@@ -2436,10 +2436,10 @@ private:
 
   // Assume accumulator tile is an arrangement of 8-by-8 tiles replicated over the entire
   // shape, with each quad mapped to one row and each thread mapped to 1/4 of the elements
-  // of that row. The accumulators within one row are assumed to be consecutive.
- static int const kElementsPerAccess = InstructionShape::kN / 4;
+  // of that row. 2The accumulators within one row are assumed to be consecutive.
+ static int const kElementsPerAccess = InstructionShape::kN / 4;      //2
  static int const kRowsPerTile = 8;
- static int const kAccumulatorRows = InstructionShape::kM / kRowsPerTile;
+ static int const kAccumulatorRows = InstructionShape::kM / kRowsPerTile;     //2
 
 public:
 
@@ -2450,7 +2450,7 @@ public:
   /// Fragment object holding a thread's part of a tile
   using Fragment = Array<
     Element, 
-    Policy::MmaIterations::kCount * InstructionShape::kMN / kThreads>;
+    Policy::MmaIterations::kCount * InstructionShape::kMN / kThreads>;      //128!   64 * 64 / 32
 
 private:
 
@@ -2605,19 +2605,19 @@ public:
     offset_ref.add_pointer_offset(pointer_offset);
 
     CUTLASS_PRAGMA_UNROLL
-    for (int mma_n = 0; mma_n < Policy::MmaIterations::kColumn; ++mma_n) {
+    for (int mma_n = 0; mma_n < Policy::MmaIterations::kColumn; ++mma_n) {        //64/8
       CUTLASS_PRAGMA_UNROLL
-      for (int mma_m = 0; mma_m < Policy::MmaIterations::kRow; ++mma_m) {
+      for (int mma_m = 0; mma_m < Policy::MmaIterations::kRow; ++mma_m) {         //64/16
         
-        int mma_accum_start = kAccumulatorRows * kElementsPerAccess * 
+        int mma_accum_start = kAccumulatorRows * kElementsPerAccess *         //2 * 2 * (~+~)
           (mma_n * Policy::MmaIterations::kRow + mma_m);
 
         CUTLASS_PRAGMA_UNROLL
-        for (int row = 0; row < kAccumulatorRows; ++row) {
+        for (int row = 0; row < kAccumulatorRows; ++row) {          //2
           CUTLASS_PRAGMA_UNROLL
-          for (int col = 0; col < kElementsPerAccess; ++col) {
+          for (int col = 0; col < kElementsPerAccess; ++col) {        //2
             int accum_m = mma_m * InstructionShape::kM * OpDelta::kRow +
-                          row * kRowsPerTile;
+                          row * kRowsPerTile;                                 //~ + ~ * 8
             int accum_n = mma_n * InstructionShape::kN * OpDelta::kColumn + col;
             int idx = mma_accum_start + row * kElementsPerAccess + col;
 

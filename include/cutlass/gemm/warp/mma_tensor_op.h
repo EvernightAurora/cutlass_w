@@ -296,10 +296,10 @@ public:
     #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ < 800)
       // Serpentine visitation order maximizing reuse of Rb
       CUTLASS_PRAGMA_UNROLL
-      for (int n = 0; n < MmaIterations::kColumn; ++n) {
+      for (int n = 0; n < MmaIterations::kColumn; ++n) {            //8
 
         CUTLASS_PRAGMA_UNROLL
-        for (int m = 0; m < MmaIterations::kRow; ++m) {
+        for (int m = 0; m < MmaIterations::kRow; ++m) {             //4
 
           int m_serpentine = ((n % 2) ? (MmaIterations::kRow - 1 - m) : m);
 

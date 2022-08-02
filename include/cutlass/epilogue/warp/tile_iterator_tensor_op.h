@@ -68,7 +68,7 @@ template <
 >
 class TileIteratorTensorOp<WarpShape_, OperatorShape_, Element_, layout::RowMajor> {
 public:
-
+  static auto const SIGN_LINE = __LINE__;
   using WarpShape = WarpShape_;
   using OperatorShape = OperatorShape_;
   using Element = Element_;
