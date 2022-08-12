@@ -36,6 +36,7 @@
 
 #include "cutlass/transform/threadblock/regular_tile_iterator.h"
 #include "cutlass/transform/threadblock/regular_tile_access_iterator_tensor_op.h"
+#include "cutlass/transform/pitch_linear_thread_map.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -53,11 +54,11 @@ namespace threadblock {
 ///            WriteableContiguousTileIteratorConcept
 ///
 template <typename Shape_, typename Element_, int AdvanceRank,
-          typename ThreadMap_, int Alignment>
+          typename ThreadMap_, int Alignment, int Crosswise>
 class RegularTileIterator<
     Shape_, Element_,
     layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                          int(128 / sizeof(Element_))>,
+                                          Crosswise>,  //int(128 / sizeof(Element_))>,
     AdvanceRank, ThreadMap_, Alignment> {
  public:
 
@@ -69,7 +70,7 @@ class RegularTileIterator<
   using Element = Element_;
   using Layout =
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                            int(128 / sizeof(Element))>;
+                                            Crosswise>; //int(128 / sizeof(Element))>;
   static int const kAdvanceRank = AdvanceRank;
   static int const kAlignment = Alignment;
 
@@ -228,11 +229,11 @@ public:
 ///            WriteableContiguousTileIteratorConcept
 ///
 template <typename Shape_, typename Element_, int AdvanceRank,
-          typename ThreadMap_, int Alignment>
+          typename ThreadMap_, int Alignment, int Crosswise>
 class RegularTileIterator<
     Shape_, Element_,
     layout::ColumnMajorTensorOpMultiplicandCongruous<
-        sizeof_bits<Element_>::value, int(128 / sizeof(Element_))>,
+        sizeof_bits<Element_>::value, Crosswise>, //int(128 / sizeof(Element_))>,
     AdvanceRank, ThreadMap_, Alignment> {
  public:
 
@@ -243,7 +244,7 @@ class RegularTileIterator<
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::ColumnMajorTensorOpMultiplicandCongruous<
-      sizeof_bits<Element_>::value, int(128 / sizeof(Element))>;
+      sizeof_bits<Element_>::value, Crosswise>; //int(128 / sizeof(Element))>;
   static int const kAdvanceRank = AdvanceRank;
   static int const kAlignment = Alignment;
 
@@ -259,7 +260,7 @@ class RegularTileIterator<
   using UnderlyingIterator = RegularTileIterator<
       layout::PitchLinearShape<Shape::kRow, Shape::kColumn>, Element,
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                            int(128 / sizeof(Element))>,
+                                            Crosswise>,  //int(128 / sizeof(Element))>,
       (kAdvanceRank == 0 ? 0 : 1), ThreadMap_>;
 
  public:
@@ -349,11 +350,11 @@ public:
 ///            WriteableContiguousTileIteratorConcept
 ///
 template <typename Shape_, typename Element_, int AdvanceRank,
-          typename ThreadMap_, int Alignment>
+          typename ThreadMap_, int Alignment, int Crosswise>
 class RegularTileIterator<
     Shape_, Element_,
     layout::RowMajorTensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                                  int(128 / sizeof(Element_))>,
+                                                  Crosswise>, //int(128 / sizeof(Element_))>,
     AdvanceRank, ThreadMap_, Alignment> {
  public:
 
@@ -364,7 +365,7 @@ class RegularTileIterator<
   using Shape = Shape_;
   using Element = Element_;
   using Layout = layout::RowMajorTensorOpMultiplicandCongruous<
-      sizeof_bits<Element_>::value, int(128 / sizeof(Element))>;
+      sizeof_bits<Element_>::value, Crosswise>;//int(128 / sizeof(Element))>;
   static int const kAdvanceRank = AdvanceRank;
   static int const kAlignment = Alignment;
 
@@ -380,7 +381,7 @@ class RegularTileIterator<
   using UnderlyingIterator = RegularTileIterator<
       layout::PitchLinearShape<Shape::kColumn, Shape::kRow>, Element,
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                            int(128 / sizeof(Element))>,
+                                            Crosswise>,  //int(128 / sizeof(Element))>,
       (kAdvanceRank == 0 ? 1 : 0), ThreadMap_>;
 
  public:
@@ -1096,6 +1097,134 @@ class RegularTileIterator<
   /// Store a fragment to memory
   CUTLASS_DEVICE
   void store(Fragment const &frag) { store_with_pointer_offset(frag, 0); }
+};
+
+
+
+template <
+  typename Shape,
+  typename Element,
+  typename Layout,
+  int AdvanceRank,
+  typename ThreadMap,
+  int Alignment = sizeof_bits<Element>::value * ThreadMap::kElementsPerAccess / 8
+>
+class _RegularTileIterator;
+
+
+template <typename Shape_, typename Shape2_, typename Element_, typename Layout_, int AdvanceRank, 
+          int threads, int kElePerAcc, cutlass::gemm::Operand opr, typename WarpArrange, int Alignment>
+class _RegularTileIterator<
+    Shape_, Element_,
+    Layout_,
+    AdvanceRank, cutlass::transform::HollowPitchLinearWarpRakedThreadMap<
+    Shape2_, threads, WarpArrange, kElePerAcc, opr
+    >, Alignment> {
+
+ public:
+  static_assert(
+      AdvanceRank == 0 || AdvanceRank == 1,
+      "Specialization for pitch-linear iterator may along advance along the "
+      "contiguous(rank=0) or strided(rank=1) dimension.");
+  using OuterTmap = cutlass::transform::HollowPitchLinearWarpRakedThreadMap<
+    Shape2_, threads, WarpArrange, kElePerAcc, opr>;
+  using Shape = Shape_;
+  using Element = Element_;
+  using Layout = Layout_;
+  static int const kAdvanceRank = AdvanceRank;
+  static int const kAlignment = Alignment;
+
+  using Index = typename Layout::Index;
+  using LongIndex = typename Layout::LongIndex;
+
+  using TensorRef = TensorRef<Element, Layout>;
+  using TensorCoord = typename Layout::TensorCoord;
+
+  using ThreadMap = OuterTmap;
+
+  /// Underlying iterator type
+  using UnderlyingIterator = RegularTileIterator<
+    Shape,
+    Element,
+    Layout,
+    kAdvanceRank,
+    typename OuterTmap::Base
+  >;
+
+ public:
+  /// Fragment object to be loaded or stored
+  using Fragment = Array<Element, UnderlyingIterator::Fragment::kElements>;
+
+ private:
+
+  /// Underlying iterator
+  UnderlyingIterator iterator_;
+  bool enable;
+
+ public:
+  /// Construct a TileIterator with zero threadblock offset
+  CUTLASS_HOST_DEVICE
+  _RegularTileIterator(TensorRef ref,  ///< Pointer to start of tensor
+                      int thread_id   ///< ID of each participating thread
+                      )
+       : iterator_(ref,  OuterTmap::translate_tid(thread_id)) {
+        enable = OuterTmap::is_enable(thread_id);
+        //printf("Tid %d is %d -> %d\n", threadIdx.x, enable, OuterTmap::translate_tid(thread_id));
+       }
+
+  /// Adds a pointer offset in units of Element
+  CUTLASS_HOST_DEVICE
+  void add_pointer_offset(LongIndex pointer_offset) {
+    if(enable)
+      iterator_.add_pointer_offset(pointer_offset);
+  }
+
+  /// Advances to the next tile in memory.
+  CUTLASS_HOST_DEVICE
+  _RegularTileIterator &operator++() {
+    if(enable)
+      ++iterator_;
+    return *this;
+  }
+
+  /// Advances to the next tile in memory.
+  CUTLASS_HOST_DEVICE
+  _RegularTileIterator operator++(int) {
+    _RegularTileIterator prev(*this);
+    if(enable)
+      ++iterator_;
+
+    return prev;
+  }
+
+  /// Adds a tile offset
+  CUTLASS_DEVICE
+  void add_tile_offset(TensorCoord const &coord) {
+    if(enable)
+      iterator_.add_tile_offset(coord);
+  }
+
+  /// Loads a fragment from memory
+  CUTLASS_DEVICE
+  void load_with_pointer_offset(Fragment &frag, Index pointer_offset) {
+    if(enable)
+      iterator_.load_with_pointer_offset(frag, pointer_offset);
+  }
+
+  /// Loads a fragment from memory
+  CUTLASS_DEVICE
+  void load(Fragment &frag) { if(enable)load_with_pointer_offset(frag, 0); }
+
+  /// Store a fragment to memory
+  CUTLASS_DEVICE
+  void store_with_pointer_offset(Fragment const &frag, Index pointer_offset) {
+    if(enable)
+      iterator_.store_with_pointer_offset(frag, pointer_offset);
+  }
+
+  /// Store a fragment to memory
+  CUTLASS_DEVICE
+  void store(Fragment const &frag) { if(enable)store_with_pointer_offset(frag, 0); }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

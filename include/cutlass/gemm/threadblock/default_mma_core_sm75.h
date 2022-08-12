@@ -59,6 +59,30 @@ namespace threadblock {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+template<
+    typename Element,
+    typename Shape,   //pitch linear threadblock shape expect
+    int kAccessInBits = 128,
+    typename PresetArrangement = layout::PitchLinearShape<8, 4>,
+    int ExpectedCrosswise = 128 / sizeof_bits<Element>::value>
+struct ArrangementCrosswiseRetune{
+  //may useless but no harm
+  using Type = Element;
+  static int const SizeofBits = sizeof_bits<Element>::value;
+  static int const ElementPerAccess = kAccessInBits / SizeofBits;
+  static int const ContiguousMaxLanes = Shape::kContiguous / ElementPerAccess;
+  static int const StridedMaxLanes = Shape::kStrided;
+
+  static_assert(ContiguousMaxLanes * ElementPerAccess == Shape::kContiguous, "Can not divide by AccessSize");
+  static_assert(StridedMaxLanes * ContiguousMaxLanes >= 32, "Too small Shape, not implemented yet");
+
+  using WarpArrangement = typename platform::conditional<(PresetArrangement::kContiguous > ContiguousMaxLanes),
+                                    layout::PitchLinearShape<ContiguousMaxLanes, 32 / ContiguousMaxLanes>,  //if need, retune
+                                    PresetArrangement>::type;       //if not,  do nthing
+  static int const Crosswise = WarpArrangement::kContiguous * ElementPerAccess;
+};
+
 /// Partial specialization:
 ///
 ///   A: column-major
@@ -129,13 +153,16 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   // Shared memory layouts
   //
 
+  using LowMRetune = ArrangementCrosswiseRetune<ElementA, layout::PitchLinearShape<WarpShape::kM, WarpShape::kK> >;
+  using LowNRetune = ArrangementCrosswiseRetune<ElementB, layout::PitchLinearShape<WarpShape::kN, WarpShape::kK> >;
+
   using SmemLayoutA = 
     layout::ColumnMajorTensorOpMultiplicandCongruous<
-      sizeof_bits<ElementA>::value, int(128 / sizeof(ElementA))>;
+      sizeof_bits<ElementA>::value, LowMRetune::Crosswise>;   //int(128 / sizeof(ElementA))>;
 
   // Shared memory layout
   using SmemLayoutB = layout::RowMajorTensorOpMultiplicandCongruous<
-    sizeof_bits<ElementB>::value, int(128 / sizeof(ElementB))>;
+    sizeof_bits<ElementB>::value, LowNRetune::Crosswise>; //int(128 / sizeof(ElementB))>;
 
   //
   // Iterators to write to shared memory
@@ -145,7 +172,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   using IteratorThreadMapA = transform::PitchLinearWarpRakedThreadMap<
     layout::PitchLinearShape<Shape::kM, Shape::kK>,
     kThreads,
-    layout::PitchLinearShape<8, 4>,
+    typename LowMRetune::WarpArrangement,   //layout::PitchLinearShape<8, 4>,
     kAccessSizeInBits / sizeof_bits<ElementA>::value
   >;
 
@@ -162,7 +189,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   using IteratorThreadMapB = transform::PitchLinearWarpRakedThreadMap<
     layout::PitchLinearShape<Shape::kN, Shape::kK>,
     kThreads,
-    layout::PitchLinearShape<8, 4>,
+    typename LowNRetune::WarpArrangement,   //layout::PitchLinearShape<8, 4>,
     kAccessSizeInBits / sizeof_bits<ElementB>::value
   >;
 
@@ -290,14 +317,15 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   //
 
   /// ThreadMap of iterator A
-  using IteratorThreadMapA = transform::PitchLinearWarpRakedThreadMap<
+  using IteratorThreadMapA = transform::HollowPitchLinearWarpRakedThreadMap<
       layout::PitchLinearShape<Shape::kK, Shape::kM>, kThreads,
       layout::PitchLinearShape<kWarpThreadArrangementContiguousA,
                                kWarpThreadArrangementStridedA>,
-      kAccessSizeInBits / sizeof_bits<ElementA>::value>;
+      kAccessSizeInBits / sizeof_bits<ElementA>::value,
+      cutlass::gemm::Operand::kA>;
 
   /// Shared memory iterator to A operand
-  using SmemIteratorA = transform::threadblock::RegularTileIterator<
+  using SmemIteratorA = transform::threadblock::_RegularTileIterator<
     MatrixShape<Shape::kM, Shape::kK>, 
     ElementA, 
     SmemLayoutA,
@@ -306,14 +334,15 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   >;
 
   /// ThreadMap of iterator B
-  using IteratorThreadMapB = transform::PitchLinearWarpRakedThreadMap<
+  using IteratorThreadMapB = transform::HollowPitchLinearWarpRakedThreadMap<
       layout::PitchLinearShape<Shape::kK, Shape::kN>, kThreads,
       layout::PitchLinearShape<kWarpThreadArrangementContiguousB,
                                kWarpThreadArrangementStridedB>,
-      kAccessSizeInBits / sizeof_bits<ElementB>::value>;
+      kAccessSizeInBits / sizeof_bits<ElementB>::value,
+      gemm::Operand::kB>;
 
   /// Shared memory iterator to B operand
-  using SmemIteratorB = transform::threadblock::RegularTileIterator<
+  using SmemIteratorB = transform::threadblock::_RegularTileIterator<
     MatrixShape<Shape::kK, Shape::kN>, 
     ElementB, 
     SmemLayoutB,
@@ -417,13 +446,15 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   //
   // Shared memory layouts
   //
+  /////////////////////////////////////////////////////////////////////////my modify////////////////////////////////////////////////////////////
+  using LowNRetune = ArrangementCrosswiseRetune<ElementB, layout::PitchLinearShape<WarpShape::kN, WarpShape::kK> >;
 
   using SmemLayoutA = layout::RowMajorTensorOpMultiplicandCrosswise<
       sizeof_bits<ElementA>::value, Shape::kK>;
 
   // Shared memory layout
   using SmemLayoutB = layout::RowMajorTensorOpMultiplicandCongruous<
-      sizeof_bits<ElementB>::value, int(128 / sizeof(ElementB))>;
+      sizeof_bits<ElementB>::value, LowNRetune::Crosswise>;                              //int(128 / sizeof(ElementB))>;
 
   //
   // Iterators to write to shared memory
@@ -449,7 +480,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   using IteratorThreadMapB = transform::PitchLinearWarpRakedThreadMap<
     layout::PitchLinearShape<Shape::kN, Shape::kK>,
     kThreads,
-    layout::PitchLinearShape<8, 4>,
+    typename LowNRetune::WarpArrangement, //layout::PitchLinearShape<8, 4>,
     kAccessSizeInBits / sizeof_bits<ElementB>::value
   >;
 
@@ -554,9 +585,10 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   //
   // Shared memory layouts
   //
+  using LowMRetune = ArrangementCrosswiseRetune<ElementA, layout::PitchLinearShape<WarpShape::kM, WarpShape::kK> >;
 
   using SmemLayoutA = layout::ColumnMajorTensorOpMultiplicandCongruous<
-      sizeof_bits<ElementA>::value, int(128 / sizeof(ElementA))>;
+      sizeof_bits<ElementA>::value, LowMRetune::Crosswise>;  //int(128 / sizeof(ElementA))>;
 
   // Shared memory layout
   using SmemLayoutB = layout::ColumnMajorTensorOpMultiplicandCrosswise<
@@ -569,7 +601,7 @@ struct DefaultMmaCore<Shape_, WarpShape_, InstructionShape_, ElementA_,
   /// ThreadMap of iterator A
   using IteratorThreadMapA = transform::PitchLinearWarpRakedThreadMap<
       layout::PitchLinearShape<Shape::kM, Shape::kK>, kThreads,
-      layout::PitchLinearShape<8, 4>,
+      typename LowMRetune::WarpArrangement,     //layout::PitchLinearShape<8, 4>,
       kAccessSizeInBits / sizeof_bits<ElementA>::value>;
 
   /// Shared memory iterator to A operand

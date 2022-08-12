@@ -42,7 +42,7 @@
 #include "cutlass/tensor_ref.h"
 #include "cutlass/tensor_view.h"
 #include "cutlass/layout/pitch_linear.h"
-
+#include "cutlass/gemm/gemm.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace cutlass {
@@ -914,6 +914,83 @@ struct TransposePitchLinearThreadMap2DThreadTile {
     }
 };
 
+template <
+  typename Shape_,
+  int Threads,
+  typename WarpThreadArrangement_,
+  int ElementsPerAccess = 1,
+  cutlass::gemm::Operand Opr = cutlass::gemm::Operand::kA
+>
+struct HollowPitchLinearWarpRakedThreadMap{
+    /// Tile shape
+  using Shape = Shape_;
+  //////////////////////////////////////////////////////////////
+  using WarpThreadArrangement = WarpThreadArrangement_;
+  static int const AllThreads = Threads;
+  static const cutlass::gemm::Operand Operand = Opr;
+  static_assert(Opr == cutlass::gemm::Operand::kA || Opr == cutlass::gemm::Operand::kB, "no other possibility");
+  static_assert(Shape::kContiguous % (WarpThreadArrangement::kContiguous * ElementsPerAccess) == 0 &&
+                Shape::kStrided % WarpThreadArrangement::kStrided == 0, "it should be, or i can't make it");
+  static int const MaximumThreads = Shape::kCount / ElementsPerAccess;
+  static_assert(MaximumThreads % WarpThreadArrangement::kCount == 0, "i donno can WarpRakedTMap solve this,  i think it can't");
+  
+  static bool const bHollow = (MaximumThreads < Threads);
+  static int const AllocateThreads = (bHollow? MaximumThreads : Threads);
+
+
+  CUTLASS_HOST_DEVICE
+  static bool DistributeInputTask(int&threadId){
+    if(bHollow){
+      if(Operand == cutlass::gemm::Operand::kA)
+        return threadId < AllocateThreads;
+      else{       //kB
+        threadId = AllThreads - threadId - 1;
+        return threadId < AllocateThreads;
+      }
+    }
+    return true;
+  }
+  CUTLASS_HOST_DEVICE
+  static bool is_enable(int tId){
+    if(bHollow){
+      if(Operand == cutlass::gemm::Operand::kA)
+        return tId < AllocateThreads;
+      else{       //kB
+        if(AllThreads - tId - 1 >= AllocateThreads)
+          return false;
+        return true;
+      }
+    }
+    return true;
+  }
+  CUTLASS_HOST_DEVICE
+  static int translate_tid(int tId){
+    if(bHollow){
+      if(Operand == cutlass::gemm::Operand::kA)
+        return tId;
+      else{       //kB
+        return AllThreads - tId - 1;
+      }
+    }
+    else
+      return tId;
+  }
+
+  using Base = PitchLinearWarpRakedThreadMap<Shape, AllocateThreads, WarpThreadArrangement, ElementsPerAccess>;
+
+  using TensorCoord = typename Base::TensorCoord;
+  using Detail = typename Base::Detail;
+  using Iterations = typename Base::Iterations;
+  using Delta = typename Base::Delta;
+  static auto const kElementsPerAccess = Base::kElementsPerAccess;
+  CUTLASS_HOST_DEVICE
+  static TensorCoord initial_offset(int tid){
+    if(bHollow)
+      if(!DistributeInputTask(tid))
+        return TensorCoord();
+    return Base::initial_offset(tid);
+  }
+};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

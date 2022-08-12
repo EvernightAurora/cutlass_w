@@ -60,11 +60,11 @@ namespace threadblock {
 ///            WriteableContiguousTileIteratorConcept
 ///
 template <typename Shape_, typename Element_, int AdvanceRank,
-          typename ThreadMap_, int Alignment>
+          typename ThreadMap_, int Alignment, int Crosswise>
 class RegularTileAccessIterator<
     Shape_, Element_,
     layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                          int(128 / sizeof(Element_))>,
+                                          Crosswise>,  //int(128 / sizeof(Element_))>,
     AdvanceRank, ThreadMap_, Alignment> {
  public:
   static_assert(
@@ -76,7 +76,7 @@ class RegularTileAccessIterator<
   using Element = Element_;
   using Layout =
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
-                                            int(128 / sizeof(Element_))>;
+                                            Crosswise>; //int(128 / sizeof(Element_))>;
   static int const kAdvanceRank = AdvanceRank;
   static int const kAlignment = Alignment;
 

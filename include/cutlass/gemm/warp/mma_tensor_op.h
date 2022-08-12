@@ -54,6 +54,7 @@
 
 #include "cutlass/gemm/warp/mma_tensor_op_tile_iterator.h"
 #include "cutlass/gemm/warp/mma_tensor_op_tile_iterator_sm80.h"
+#include "cutlass/gemm/warp/mma_tensor_op_tile_iterator_mine.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
