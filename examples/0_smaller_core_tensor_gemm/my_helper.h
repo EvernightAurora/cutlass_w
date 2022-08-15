@@ -56,42 +56,56 @@ struct LAYOUT<ColumnMajor>{
     operator ColumnMajor()const {return rm;};
     int stride(){return rm.stride()[0];}
 };
-
+enum FILLTYPE{
+    None = 0,
+    Diag = 1,
+    Random = 2,
+    Hilbert = 3,
+    xHilbert = 4,
+    Range = 5
+};
 template<typename T, typename MAJOR>
 struct MakeMatrix{
-    static cudaError_t alloc(T*&pm, T*&dpm, int a, int b, int filltype=1){
+    static cudaError_t alloc(T*&pm, T*&dpm, int a, int b, FILLTYPE filltype=FILLTYPE::None){
         MAJOR mj = LAYOUT<MAJOR>(a, b);
         size_t item_size = sizeof(T);
         pm = new T[a * b];
         auto err_t = cudaMalloc((void**)&dpm, a*b*item_size);
-        int wi;
+        int wi, wia;
         memset(pm, 0, a*b*item_size);
-        if(filltype == 1)
-            for(wi=0;wi<a && wi<b; ++wi)
-                pm[mj((cutlass::MatrixCoord){wi, wi})] = 1;
-        else if (filltype == 2)
-        {
-            int wia;
-            for(wi=0; wi<a; ++wi)
-                for(wia=0; wia<b; ++wia)
-                    pm[mj((cutlass::MatrixCoord){wi, wia})] = rand() * 1.0 / RAND_MAX;
-        }else if (filltype == 3)
-        {
-            int wia;
-            for(wi=0; wi<a; ++wi)
-                for(wia=0; wia<b; ++wia)
-                    pm[mj((cutlass::MatrixCoord){wi, wia})] = 1. / (1. + wi + wia);
-        }else if (filltype == 4)
-        {
-            int wia;
-            for(wi=0; wi<a; ++wi)
-                for(wia=0; wia<b; ++wia)
-                    if(wia > wi)
+        switch(filltype){
+            case FILLTYPE::Diag:
+                for(wi=0;wi<a && wi<b; ++wi)
+                    pm[mj((cutlass::MatrixCoord){wi, wi})] = 1;
+                break;
+
+            case FILLTYPE::Random:
+                for(wi=0; wi<a; ++wi)
+                    for(wia=0; wia<b; ++wia)
+                        pm[mj((cutlass::MatrixCoord){wi, wia})] = rand() * 1.0 / RAND_MAX;
+                break;
+
+            case FILLTYPE::Hilbert:
+                for(wi=0; wi<a; ++wi)
+                    for(wia=0; wia<b; ++wia)
                         pm[mj((cutlass::MatrixCoord){wi, wia})] = 1. / (1. + wi + wia);
-                    else if(wia <wi)
-                        pm[mj((cutlass::MatrixCoord){wi, wia})] = -1. / (1. + wi + wia);
-                    else
-                        pm[mj((cutlass::MatrixCoord){wi, wia})] = 1;
+                break;
+
+            case FILLTYPE::xHilbert:
+                for(wi=0; wi<a; ++wi)
+                    for(wia=0; wia<b; ++wia)
+                        if(wia > wi)
+                            pm[mj((cutlass::MatrixCoord){wi, wia})] = 1. / (1. + wi + wia);
+                        else if(wia <wi)
+                            pm[mj((cutlass::MatrixCoord){wi, wia})] = -1. / (1. + wi + wia);
+                        else
+                            pm[mj((cutlass::MatrixCoord){wi, wia})] = 1;
+                break;
+            
+            case FILLTYPE::Range:
+                for(wi=0; wi<a; ++wi)
+                    for(wia=0; wia<b; ++wia)
+                        pm[mj(cutlass::MatrixCoord(wi, wia))] = wi*b + wia;
         }
         cudaMemcpy(dpm, pm, a*b*item_size, cudaMemcpyHostToDevice);
         return err_t;
@@ -157,15 +171,15 @@ struct Testing: public TestingBase{
     TD *pDa, *dpDa, *pDb, *dpDb;
 
     int M, N, K;
-    Testing(int m=168, int n=248, int k=104){
+    Testing(int m=168, int n=248, int k=104, FILLTYPE first_fill_type=FILLTYPE::Random, FILLTYPE second_fill_type=FILLTYPE::Diag){
         M = m;
         N = n;
         K = k;
-        MakeMatrix<TA, LA>::alloc(pA, dpA, m, k, 2);
-        MakeMatrix<TB, LB>::alloc(pB, dpB, k, n, 2);
-        MakeMatrix<TC, LC>::alloc(pC, dpC, m, n, 2);
-        MakeMatrix<TD, LC>::alloc(pDa, dpDa, m, n, 1);
-        MakeMatrix<TD, LC>::alloc(pDb, dpDb, m, n, 1);
+        MakeMatrix<TA, LA>::alloc(pA, dpA, m, k, first_fill_type);
+        MakeMatrix<TB, LB>::alloc(pB, dpB, k, n, first_fill_type);
+        MakeMatrix<TC, LC>::alloc(pC, dpC, m, n, first_fill_type);
+        MakeMatrix<TD, LC>::alloc(pDa, dpDa, m, n, second_fill_type);
+        MakeMatrix<TD, LC>::alloc(pDb, dpDb, m, n, second_fill_type);
     }
 
     void Test(){

@@ -111,11 +111,45 @@ using TEST37 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, 
 using TEST38 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
         GemmShape<128, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
 
+///////////////////////////////////////////////////////warps in low channel////////////////////////////
 
+using TEST39 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST40 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 16, 16>, GemmShape<32, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST41 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+///////////////////////////////////////////////////all typeof with warps///////////////////////////
+
+
+using TEST42 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<16, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST43 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST44 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST45 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<16, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST46 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST47 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST48 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<16, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST49 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST50 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST51 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<16, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST52 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST53 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
 
 std::vector<TestingBase*> Tests = {
     //new TEST0(), 
-    
+    /*
     new TEST1(), 
     new TEST2(), 
     new TEST3(), 
@@ -153,7 +187,22 @@ std::vector<TestingBase*> Tests = {
     new TEST35(),
     new TEST36(),
     new TEST37(32, 16, 16),
-    new TEST38()
+    new TEST38(),
+    new TEST39(),
+    new TEST40(),
+    new TEST41(),*/
+    new TEST42(),
+    new TEST43(),
+    new TEST44(),
+    new TEST45(),
+    new TEST46(),
+    new TEST47(),
+    new TEST48(),
+    new TEST49(),
+    new TEST50(),
+    new TEST51(),
+    new TEST52(),
+    new TEST53(),
     
 };
 
@@ -168,12 +217,18 @@ void View(){
 }
 
 void View2(){
+        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::AllocateThreads<<std::endl;
+        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::AllThreads<<std::endl;
+        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::bHollow<<std::endl;
+        SHOW_TYPE(TEST40::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::Policy::LdsmShape);
         
 }
 
 
 int main(){
     srand(time(nullptr));
+
+    View2();
     for(auto test : Tests)
         test->Test();
     return 0;
