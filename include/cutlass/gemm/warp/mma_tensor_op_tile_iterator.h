@@ -497,7 +497,7 @@ public:
         int access_idx = c + s * Policy::LdsmIterations::kContiguous;
 
         AccessType const *source_ptr =
-            pointer_[nPointerStridedIndex][(c + nPointerContiguousIndex) % kPointerCountContiguous] +
+            pointer_[(nPointerStridedIndex + s) % kPointerCountStrided][(c + nPointerContiguousIndex) % kPointerCountContiguous] +
             Layout::TileShape::kContiguous * (c  / kPointerCountContiguous) +
             Policy::kLdsmOpInner * Policy::LdsmShape::kStrided * s * stride_;
 
