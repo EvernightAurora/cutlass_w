@@ -1,3 +1,10 @@
+
+
+//#define PRINT
+//#define PRINTLOAD
+//#define PRINTOFFSET
+#define PRINTSPEC gemm::Operand::kA
+
 #include "my_helper.h"
 #include <vector>
 
@@ -147,9 +154,45 @@ using TEST52 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, hal
 using TEST53 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
         GemmShape<32, 32, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
 
+/////////////////////////////////////////////////////large tbShape///////////////////////////////////////////////
+using TEST54 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST55 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST56 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST57 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+
+using TEST58 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 64, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST59 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 64, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST60 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 64, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST61 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<64, 64, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+
+using TEST62 = Testing<half_t, RowMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<128, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST63 = Testing<half_t, ColumnMajor, half_t, RowMajor, half_t, RowMajor, half_t,
+        GemmShape<128, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST64 = Testing<half_t, RowMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<128, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+using TEST65 = Testing<half_t, ColumnMajor, half_t, ColumnMajor, half_t, RowMajor, half_t,
+        GemmShape<128, 16, 16>, GemmShape<16, 16, 16>, GemmShape<16, 8, 8>, LinearCombination<half_t, 4, half_t ,half_t> >;
+
+
+
+///////////////////////////////////////other type, they originally support row col only and don't need classed i modified////////////////////////////
+
+using TEST66 = TestOffical<int8_t, RowMajor, int8_t, ColumnMajor, int32_t, RowMajor, int32_t>;
+using TEST67 = TestOffical<cutlass::int4b_t, RowMajor, cutlass::int4b_t, ColumnMajor, int32_t, RowMajor, int32_t>;
+
+
 std::vector<TestingBase*> Tests = {
     //new TEST0(), 
-    /*
+    
     new TEST1(), 
     new TEST2(), 
     new TEST3(), 
@@ -186,11 +229,11 @@ std::vector<TestingBase*> Tests = {
     new TEST34(),
     new TEST35(),
     new TEST36(),
-    new TEST37(32, 16, 16),
+    new TEST37(),
     new TEST38(),
     new TEST39(),
     new TEST40(),
-    new TEST41(),*/
+    new TEST41(),
     new TEST42(),
     new TEST43(),
     new TEST44(),
@@ -203,13 +246,30 @@ std::vector<TestingBase*> Tests = {
     new TEST51(),
     new TEST52(),
     new TEST53(),
+    new TEST54(),
+    new TEST55(),
+    new TEST56(),
+    new TEST57(),
+    new TEST58(),
+    new TEST59(),
+    new TEST60(),
+    new TEST61(),
+    new TEST62(),
+    new TEST63(),
+    new TEST64(),
+    new TEST65(),
+
+
+    new TEST66(16*5, 16*4, 16*6, FILLTYPE::sRange),
+    //new TEST67(128, 128, 128, FILLTYPE::sRange),
+
     
 };
 
 template<typename TEST>
 void View(){
-        SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorB::Base::Layout);
-        SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorB::Base::Policy::LdsmShape);
+        SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::Layout);
+        SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::Policy::LdsmShape);
         SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::Shape);
         SHOW_TYPE(typename TEST::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::InstructionShape);
         
@@ -217,11 +277,9 @@ void View(){
 }
 
 void View2(){
-        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::AllocateThreads<<std::endl;
-        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::AllThreads<<std::endl;
-        std::cout<<TEST39::GEMM::GemmKernel::Mma::IteratorA::ThreadMap::bHollow<<std::endl;
-        SHOW_TYPE(TEST40::GEMM::GemmKernel::Mma::Operator::IteratorA::Base::Policy::LdsmShape);
+        SHOW_TYPE(TEST67::GEMM_ref::GemmKernel::Mma::Operator::IteratorA);
         
+        SHOW_TYPE(TEST67::GEMM_ref::GemmKernel::Mma::Operator::IteratorB);
 }
 
 

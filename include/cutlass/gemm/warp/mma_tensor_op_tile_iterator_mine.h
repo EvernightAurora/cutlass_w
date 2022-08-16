@@ -18,15 +18,13 @@
 
 
 
-//#define PRINT
-
 namespace cutlass {
 namespace gemm {
 namespace warp {
 template<typename, Operand, typename, typename, typename, int, int, int>
 class MyMmaTensorOpMultiplicandTileIterator;
 
-#define MmaTensorOpMultiplicandTileIterator MyMmaTensorOpMultiplicandTileIterator
+#define MmaTensorOpMultiplicandTileIterator MmaTensorOpMultiplicandTileIterator
 template <
     /// Size of the matrix to load (concept: PitchLinearShape)
     typename Shape_,
@@ -51,7 +49,7 @@ class MmaTensorOpMultiplicandTileIterator<
 
   static_assert(kOperand == Operand::kA || kOperand== Operand::kB,
     "MmaTensorOpMultiplicandIterator may only be instantiated for A or B operands to warp-level Mma.");
-  static_assert(sizeof_bits<Element_>::value == 16, "just support 16Bit now, not sure for other bit");
+  //static_assert(sizeof_bits<Element_>::value == 16, "just support 16Bit now, not sure for other bit");
   static auto const ME = 1;
   /// Element type
   using Element = Element_;
@@ -83,13 +81,13 @@ class MmaTensorOpMultiplicandTileIterator<
 
   /// Long Index type
   using StrideIndex = typename TensorRef::Layout::Stride::Index;
-  static_assert(Layout::Base::kFactor > 1, "Only suit for unnormal kFactor(>1)");
+  //static_assert(Layout::Base::kFactor > 1, "Only suit for unnormal kFactor(>1)");
   /// Coordinate for an element in the tensor
   using TensorCoord = typename TensorRef::TensorCoord;
 
   //static_assert(Shape::kContiguous == Crosswise, "This is for those small-shape.");
     //maybe we re suport more warp!
-    static_assert(Crosswise % Shape::kContiguous == 0, "Muse wshape be divisible from tbShape");
+    //static_assert(Crosswise % Shape::kContiguous == 0, "Muse wshape be divisible from tbShape");
   
   static int const kWarpCount = Crosswise / Shape::kContiguous;
   
@@ -128,9 +126,18 @@ class MmaTensorOpMultiplicandTileIterator<
     /// Number of groups for each tile
     static int const kGroupsPerTile =
         Shape::kStrided / InstructionShape::kStrided;                 //< 2
-    //(LdsmShapeContiguous * kLdsmOpOuter == Crosswise, "not implemented,  because need complex ++");
+    //static_assert(LdsmShapeContiguous * kLdsmOpOuter == Crosswise, "not implemented,  because need complex ++");
     //static_assert(kGroupsPerTile == 1, "not implemented");
   };
+
+
+  static int const kStridedItersPerTile = 
+      Layout::Base::TileShape::kStrided / (InstructionShape::kStrided / Layout::Base::kFactor);
+  /// Number of internal pointers needed to reference shared memory
+  static int const kPointerCountStrided =
+      kStridedItersPerTile > 1 ? kStridedItersPerTile : 1;
+  static int const kPointerCountContiguous = 
+      Layout::TileShape::kContiguous / Layout::Base::kFactor / Policy::LdsmShape::kContiguous;
 
 private:
 
@@ -138,9 +145,7 @@ private:
   static_assert(kOpDelta == 1,
     "Alternative arrangements not supported at present.");
 
-  /// Number of internal pointers needed to reference shared memory
-  static int const kPointerCount =
-      Layout::Base::kFactor / 2;
+
 
   /// Pointer type used for accesses
   using AccessType = Array<Element, Layout::kElementsPerAccess>;
@@ -164,11 +169,11 @@ private:
   StrideIndex stride_;
 
   /// Shared memory base pointers - not advanced
-  AccessType const *pointer_[kPointerCount];
+  AccessType const *pointer_[kPointerCountStrided][kPointerCountContiguous];
 
   /// Byte offset incremented as iterator advances
   Index byte_offset_;
-  int nPointerIndex;
+  int nPointerStridedIndex, nPointerContiguousIndex;
 
 public:
   
@@ -181,7 +186,7 @@ public:
   MmaTensorOpMultiplicandTileIterator(
     TensorRef const &ref, 
     int lane_id
-  ):nPointerIndex(0),
+  ):nPointerStridedIndex(0), nPointerContiguousIndex(0),
     stride_(ref.stride(0) / Layout::kElementsPerAccess), byte_offset_(0),
     k_group_idx_(0) {
       lane_id %= Policy::LdsmShape::kCount * Policy::kLdsmOpInner;
@@ -197,67 +202,112 @@ public:
     CUTLASS_UNUSED(lane_in_quad_quad);
 
     CUTLASS_PRAGMA_UNROLL
-    for (int i = 0; i < kPointerCount; ++i) {
-      int partition_contiguous_idx = -1;        // 0-2
-      int access_contiguous_idx = -1;           // 0-4
-      int access_strided_idx = -1;              // ~
-      if(Layout::Base::kFactor == 2){
-        //kFactor == 2
-        if(Policy::LdsmShape::kStrided == 1){      // kWarpCount == 1 or == 2
-          //0  8  16 24  |  1  9  17 25
-          //10 2  26 18  |  11 3  27 19  
-          //20 28 4  12  |  21 29 5  13
-          //30  22 14 6   |  31  23 15 7 
-          partition_contiguous_idx = lane_id & 1;
-          access_strided_idx = lane_in_quad_pair >> 1;
-          access_contiguous_idx = (lane_in_quad_pair >> 1) ^ quad_pair;
+    for (int i = 0; i < kPointerCountStrided; ++i) 
+      for(int j = 0; j < kPointerCountContiguous; ++j){
+        int partition_contiguous_idx = -1;        // 0-2
+        int access_contiguous_idx = -1;           // 0-4
+        int access_strided_idx = -1;              // ~
+        if(Layout::Base::kFactor == 2){
+          //kFactor == 2
+          if(Policy::LdsmShape::kStrided == 1){      // kWarpCount == 1 or == 2
+            //0  8  16 24  |  1  9  17 25
+            //10 2  26 18  |  11 3  27 19  
+            //20 28 4  12  |  21 29 5  13
+            //30  22 14 6   |  31  23 15 7 
+                  //ldsmShapeCon == 2 or 4,  but no prob
+            partition_contiguous_idx = lane_id & 1;
+            access_strided_idx = lane_in_quad_pair >> 1;
+            access_contiguous_idx = (lane_in_quad_pair >> 1) ^ quad_pair ^ (j<<1);
+          }
+          else
+            assert(0);    // may not implement
+          
         }
-        else
-          assert(0);    // may not implement
+        else if(Layout::Base::kFactor == 4)   //kFactor = 4
+        {
+          //0 8 1 9 2 a 3 B
+          //C 4 D 5 E 6 F 7
+          //
+          //
+          if(Policy::LdsmShape::kStrided == 1){
+            if(Policy::LdsmShape::kContiguous == 2){
+              // Matrix multiply 16816 B
+              // Q0 Q2
+              // Q1 Q3        // j in [0, ]
+              access_strided_idx = ((lane_id >> 4) << 1) ^ ((lane_id >> 2 ) & 1);
+              partition_contiguous_idx = (lane_in_quad >> 1);
+              access_contiguous_idx = ((lane_id & 1) << 1) ^ (lane_in_quad_pair >> 2) ^ (lane_in_quad_quad >> 3) ^ ((i&1) << 1);
+            }
+            else if(Policy::LdsmShape::kContiguous == 1){
+              access_strided_idx = lane_id >> 2;
+              partition_contiguous_idx = (lane_in_quad >> 1); // ^ quad_quad;
+              access_contiguous_idx = ((lane_id & 1) << 1) ^ access_strided_idx ^ (j<<1);
+            }
+            else assert(0);
+          }else assert(0);
+        }else if(Layout::Base::kFactor == 8){                // kFactor == 8
+          //ofcourse, Policy::kContiguous can only = 1,
+          //so that no more warps here.
+          assert(kWarpCount == 1);
+          assert(Policy::LdsmShape::kContiguous == 1);    // j also only be 0
+          partition_contiguous_idx = lane_in_quad_pair >> 2;
+          access_strided_idx = lane_id >> 3;
+          access_contiguous_idx = lane_in_quad ^ (quad_pair & 1) ^ (quad_quad << 1) ^ (i&3);
+        }
+        else if(Layout::Base::kFactor == 1){    // oringinal  support
+          if(Policy::LdsmShape::kContiguous == 4){
+            partition_contiguous_idx = ((lane_in_quad_pair >> 2) ^ j);
+            access_contiguous_idx = (quad_pair ^ lane_in_quad);
+            access_strided_idx = lane_in_quad_pair;
+          }
+          else if(Policy::LdsmShape::kContiguous == 1){
+            partition_contiguous_idx = ((lane_in_quad_pair >> 2) ^ (j >> 2)); 
+            access_contiguous_idx = ((j & 3) ^ lane_in_quad); 
+            access_strided_idx = lane_id; 
+          }
+          else if(Policy::LdsmShape::kStrided == 2 && Policy::LdsmShape::kContiguous == 2){ 
+                if(kOperand == Operand::kA){
+                  partition_contiguous_idx = ((lane_in_quad_pair >> 2) ^ (j >> 1));
+                  access_contiguous_idx =
+                      (((quad_pair & 1) + ((j & 1) << 1)) ^ lane_in_quad);
+                  access_strided_idx = lane_in_quad_pair + (lane_id >> 4 << 3);
+                }else if(kOperand == Operand::kB){
+                  partition_contiguous_idx = ((lane_in_quad_pair >> 2) ^ (j >> 1));
+                  access_contiguous_idx = ((quad_quad + ((j & 1) << 1)) ^ lane_in_quad);
+                  access_strided_idx = lane_in_quad_quad;
+                }
+          }else if(Policy::LdsmShape::kStrided == 1 && Policy::LdsmShape::kContiguous == 2){
+            /*
+              01234567
+              10325476
+              23016745
+              32107654
+              45670123
+              54761032
+              67452301
+              76543210
+            */
+            access_strided_idx = lane_in_quad_pair;
+            partition_contiguous_idx = (lane_in_quad_pair >> 2) ^ (j>>1);
+            access_contiguous_idx = lane_in_quad ^ (quad_pair&1) ^ ((j&1)<<1);
+
+          }else assert(0);
+        }
         
-      }
-      else if(Layout::Base::kFactor == 4)   //kFactor = 4
-      {
-        if(kWarpCount == 1){
-          assert(Policy::LdsmShape::kContiguous == 2);
-          // Matrix multiply 16816 B
-          // Q0 Q2
-          // Q1 Q3
-          access_strided_idx = ((lane_id >> 4) << 1) ^ ((lane_id >> 2 ) & 1);
-          partition_contiguous_idx = (lane_in_quad >> 1);
-          access_contiguous_idx = ((lane_id & 1) << 1) ^ (lane_in_quad_pair >> 2) ^ (lane_in_quad_quad >> 3) ^ ((i&1) << 1);
-        }
-        else if(kWarpCount == 2){
-          assert(Policy::LdsmShape::kContiguous == 1);
-          access_strided_idx = lane_id >> 2;
-          partition_contiguous_idx = (lane_in_quad >> 1); // ^ quad_quad;
-          access_contiguous_idx = ((lane_id & 1) << 1) ^ access_strided_idx;
-        }
-        else assert(0);
-      }else if(Layout::Base::kFactor == 8){                // kFactor == 8
-        //ofcourse, Policy::kContiguous can only = 1,
-        //so that no more warps here.
-        assert(kWarpCount == 1);
-        assert(Policy::LdsmShape::kContiguous == 1);
-        partition_contiguous_idx = lane_in_quad_pair >> 2;
-        access_strided_idx = lane_id >> 3;
-        access_contiguous_idx = lane_in_quad ^ (quad_pair & 1) ^ (quad_quad << 1) ^ (i&3);
-      }
-      else
-        assert(0);
-      
 
-      int access_contiguous =
-          partition_contiguous_idx * Layout::PartitionShape::kContiguous +
-          access_contiguous_idx;
+        int access_contiguous =
+            partition_contiguous_idx * Layout::PartitionShape::kContiguous +
+            access_contiguous_idx;
 
-      int access_strided = access_strided_idx;
+        int access_strided = access_strided_idx;
 
-#ifdef PRINT
-    printf("Tid %d   %d's at pos <%d %d> offset %d\n", threadIdx.x, i, access_strided, access_contiguous, access_contiguous + access_strided * stride_ * Layout::Base::kFactor);
-#endif
-      pointer_[i] = reinterpret_cast<AccessType const *>(ref.data()) +
-                    access_contiguous + access_strided * stride_ * Layout::Base::kFactor;
+  #ifdef PRINT
+    if(kOperand == PRINTSPEC)
+      if(threadIdx.x < 32)
+      printf("Tid %d   %d,%d's at pos <%d %d> offset \n", threadIdx.x, i, j, access_strided, access_contiguous);
+  #endif
+        pointer_[i][j] = reinterpret_cast<AccessType const *>(ref.data()) +
+                      access_contiguous + access_strided * stride_ * Layout::Base::kFactor;
     }
   }
 
@@ -291,18 +341,25 @@ public:
       kFac == 1:  not me!
 
     */
-    nPointerIndex += strided_offset * Policy::LdsmShape::kStrided;
-    nPointerIndex %= kPointerCount;
-    if(nPointerIndex < 0)
-        nPointerIndex += kPointerCount;
+    nPointerStridedIndex += strided_offset * (Policy::LdsmShape::kStrided * Policy::kLdsmOpOuter / InstructionShape::kStrided);
+    nPointerStridedIndex %= kPointerCountStrided;
+    if(nPointerStridedIndex < 0)
+        nPointerStridedIndex += kPointerCountStrided;
+    
+    nPointerContiguousIndex += contiguous_offset * Policy::LdsmIterations::kContiguous;
+    contiguous_offset = (contiguous_offset * Policy::LdsmIterations::kContiguous / kPointerCountContiguous) * kPointerCountContiguous;
+    nPointerContiguousIndex %= kPointerCountContiguous;
+    
     int offset = (strided_offset * InstructionShape::kStrided) *
-                     stride_ * Layout::kElementsPerAccess;
-    for(int i=0; i<kPointerCount; ++i)
+                     stride_ * Layout::kElementsPerAccess + 
+                     contiguous_offset * Layout::kElementsPerAccess * Policy::LdsmShape::kContiguous;
+    /*for(int i=0; i<kPointerCount; ++i)
       pointer_[i] = reinterpret_cast<AccessType*>
-      (reinterpret_cast<long>(pointer_[i]) ^ (contiguous_offset * Policy::LdsmShape::kContiguous * sizeof(AccessType)));// 1* 2 * 16
+      (reinterpret_cast<long>(pointer_[i]) ^ (contiguous_offset * Policy::LdsmShape::kContiguous * sizeof(AccessType))); */// 1* 2 * 16
     add_pointer_offset(offset);
-#ifdef PRINT
-  printf("tid:  %d tile added %d  and offset %d\n", threadIdx.x, offset, byte_offset_ / sizeof(AccessType));
+#ifdef PRINTOFFSET
+  if(kOperand == PRINTSPEC)
+    printf("tid:  %d tile added %d con  and npCon %d\n", threadIdx.x, contiguous_offset, nPointerContiguousIndex);
 #endif
     return *this;
   }
@@ -311,16 +368,22 @@ public:
   CUTLASS_DEVICE
   MmaTensorOpMultiplicandTileIterator & operator++() {      //a: m,k  b: n, k
     add_tile_offset({0, 1});
-    
-
-
+    if (kPartitionsK > 1) {
+      ++k_group_idx_;
+      // Jump to next stage
+      if (k_group_idx_ == Policy::kGroupsPerTile) {
+        k_group_idx_ = 0;
+        add_tile_offset(
+            {0, ((kPartitionsK - 1) * Policy::kGroupsPerTile)});
+      }
+    }
     return *this;
   }
 
   /// Advances the iterator along the opposite of the advance dimension
   CUTLASS_HOST_DEVICE
   MmaTensorOpMultiplicandTileIterator & operator--() {
-    byte_offset_ -= stride_ * InstructionShape::kStrided * sizeof(Element) *
+    byte_offset_ -= Layout::Base::kFactor * stride_ * InstructionShape::kStrided * sizeof(Element) *
                     Layout::kElementsPerAccess;
 
     return *this;
@@ -367,8 +430,8 @@ public:
         int access_idx = c + s * Policy::LdsmIterations::kContiguous;
 
         AccessType const *source_ptr =
-            pointer_[(nPointerIndex + c) % kPointerCount] +
-            Layout::TileShape::kContiguous * (c / kPointerCount) +
+            pointer_[nPointerStridedIndex][(c + nPointerContiguousIndex) % kPointerCountContiguous] +
+            Layout::TileShape::kContiguous * (c  / kPointerCountContiguous) +
             Policy::kLdsmOpInner * Policy::LdsmShape::kStrided * s * stride_;
 
         char const *source_byte_ptr = reinterpret_cast<char const *>(source_ptr) + byte_offset + byte_offset_;
@@ -379,10 +442,12 @@ public:
         );
       }
     }
-    #ifdef PRINT
+    #ifdef PRINTLOAD
     cutlass::half_t* a = reinterpret_cast<cutlass::half_t*> (fetch_ptr);
     int wi;
     for(wi=0; wi*2<sizeof(Fragment) / sizeof(half_t); ++wi)
+    if(kOperand == PRINTSPEC)
+        if(threadIdx.x >= 64 && threadIdx.x < 96)
       printf("Tid: %d, [%d], %f  %f\n", threadIdx.x, wi, float(a[wi*2]), float(a[wi*2+1]));
     #endif
   }
@@ -515,7 +580,7 @@ class MmaTensorOpMultiplicandTileIterator<
   using TensorCoord = typename TensorRef::TensorCoord;
 
   /// Underlying tile iterator implementation
-  using Base = MyMmaTensorOpMultiplicandTileIterator<
+  using Base = MmaTensorOpMultiplicandTileIterator<
       layout::PitchLinearShape<Shape::kColumn, Shape::kRow>, kOperand, Element,
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
                                             little_cross>,
@@ -743,7 +808,7 @@ class MmaTensorOpMultiplicandTileIterator<
   using TensorCoord = typename TensorRef::TensorCoord;
 
   /// Underlying tile iterator implementation
-  using Base = MyMmaTensorOpMultiplicandTileIterator<
+  using Base = MmaTensorOpMultiplicandTileIterator<
       layout::PitchLinearShape<Shape::kRow, Shape::kColumn>, kOperand, Element,
       layout::TensorOpMultiplicandCongruous<sizeof_bits<Element_>::value,
                                             Crosswise>,   //int(128 / sizeof(Element_))>,

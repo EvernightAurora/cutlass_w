@@ -81,7 +81,7 @@ template <
 class MmaTensorOpMultiplicandTileIterator;
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 /// This tile iterator is specialized for 32-thread TensorOps. It uses LDSM to load from shared
 /// memory and therefore must be initialized with a TensorRef to shared memory. 
 ///
@@ -477,7 +477,7 @@ public:
     // no op
   }
 };
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 /// This tile iterator is specialized for 32-thread MMA.TF32 NT TensorOps. It
